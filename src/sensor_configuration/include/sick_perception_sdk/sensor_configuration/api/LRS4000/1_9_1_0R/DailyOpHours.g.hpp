@@ -1,0 +1,45 @@
+/*
+Copyright (c) 2026 SICK AG
+SPDX-License-Identifier: MIT
+*/
+
+/**
+ * @file DailyOpHours.g.hpp Sensor REST API payload definitions.
+ * @warning This file was generated for device 'LRS4000' version '1.9.1.0R'.
+ * Do not edit manually!
+ */
+#pragma once
+
+
+namespace sick::LRS4000::v1_9_1_0R::api::rest {
+
+/**
+ * @brief Payloads for endpoint /DailyOpHours.
+*/
+struct DailyOpHours
+{
+
+  constexpr static const char* variableName = "DailyOpHours";
+  constexpr static const bool isSopasMethod = false;
+
+  /**
+   * @brief Returns the runtime duration since the last power on (non-persistent).
+   */
+  struct Get
+  {
+    struct Response
+    {
+      Response() = default;
+
+      explicit Response(float DailyOpHours)
+        : _DailyOpHours(DailyOpHours)
+      {}
+
+      float _DailyOpHours;
+    };
+
+  }; // struct Get
+
+}; // struct DailyOpHours
+
+} // namespace sick::LRS4000::v1_9_1_0R::api::rest

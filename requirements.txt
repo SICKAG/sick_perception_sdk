@@ -1,0 +1,7 @@
+clang-format
+clang-tidy>=18
+cmake>=3.22
+conan
+openapi-spec-validator
+prance
+tabulate

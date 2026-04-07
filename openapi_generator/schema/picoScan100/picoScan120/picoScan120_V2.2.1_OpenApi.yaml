@@ -1,0 +1,4983 @@
+openapi: 3.0.1
+info: 
+ description: "This is the REST interface description of the picoScan120."
+ contact: 
+  name: Python Examples GitHub
+  url: https://github.com/SICKAG/sick_scan_rest_client
+ version: "2.2.1.0R"
+ x-sick-openapi-generator-version: 1.2.0-b.1
+ title: "picoScan120 REST interface description"
+servers: 
+- url: http://{device}/api
+  variables: 
+   device: 
+    default: 192.168.0.1
+    description: The IP address of the picoScan120.
+tags: 
+- name: 1 - General
+- name: 2 - Status
+- name: 3 - Device Information
+- name: 4 - Basic Settings
+- name: 5 - Date and System Time
+- name: 6 - Filter
+- name: 7 - Ethernet
+- name: 8 - Inputs And Outputs
+- name: 9 - Measurement Data Output
+- name: 10 - Operating Data
+- name: 11 - Diagnostics
+- name: 12 - Cybersecurity
+paths: 
+ /checkCredentials:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: 'Returns authentication success. For more details see https://github.com/SICKAG/sick_scan_rest_client.'
+   operationId: Post/checkCredentials
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       nullable: true
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /update:
+  put: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: "Transfers a firmware file (.spk.signed) from the file location to the device. The maximum possible file size is 100 MB."
+   operationId: Put/update
+   requestBody:
+    content: 
+     application/octet-stream:
+      schema: 
+       type: object
+       properties: 
+        data:
+         type: object
+         properties: 
+          Type:
+           type: string
+          Binary:
+           type: string
+   responses: 
+    '200':
+     description: successful operation
+ /crown/file:
+  get: 
+   tags: 
+   - 11 - Diagnostics
+   summary: ""
+   description: "Downloads the diagnostic file (zip file) if one exists."
+   operationId: Get/crown/file
+   parameters: 
+    - name: filePath
+      in: query
+      description: path
+      required: true
+      schema: 
+       type: string
+       example: diagnosisDump.zip
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/zip: 
+       schema: 
+        type: string
+        format: binary
+    '400':
+     description: bad operation
+    '404':
+     description: file not found
+    '500':
+     description: Server not found
+ /parameterbackup:
+  put: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: "Reads/transfers the backup file (JSON) from/to the device."
+   operationId: Put/parameterbackup
+   requestBody:
+    content: 
+     multipart/form-data:
+      schema: 
+       type: object
+       properties: 
+        datei:
+         type: string
+         format: binary
+         description: Json-File
+   responses: 
+    '200':
+     description: successful operation
+ /DeviceIdent:
+  get: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: 'Returns the device name and the firmware version.'
+   operationId: Get/DeviceIdent
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           Name:
+            type: string
+            default: "picoScan120"
+            maxLength: 11
+           Version:
+            type: string
+            default: "2.2.1.0R"
+            maxLength: 8
+ /LocationName:
+  get: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: 'Returns/sets the device name.'
+   operationId: Get/LocationName
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            LocationName:
+             type: string
+             default: "not defined"
+             maxLength: 32
+  post: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: |
+    Returns/sets the device name.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/LocationName
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          LocationName:
+           type: string
+           default: "not defined"
+           maxLength: 32
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /SerialNumber:
+  get: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: 'Returns the serial number.'
+   operationId: Get/SerialNumber
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            SerialNumber:
+             type: string
+             default: "123456789"
+             maxLength: 9
+ /FirmwareVersion:
+  get: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: 'Returns the current firmware version.'
+   operationId: Get/FirmwareVersion
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            FirmwareVersion:
+             type: string
+             default: "XXXXXXXXXX"
+             maxLength: 40
+ /SetPassword:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: 'Sets the password for the CoLa A/B interface only. In this example the password for user level: Service (4) is set to - test - (integer value of the password hash - test -). For more details see  https://github.com/SICKAG/sick_scan_rest_client.'
+   operationId: Post/SetPassword
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        data:
+         type: object
+         properties: 
+          siUserLevel:
+           type: integer
+           format: int8
+          udiNewPassword:
+           type: integer
+           format: uint32
+         example:
+          siUserLevel: 4
+          udiNewPassword: 3410122659
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           bSuccess:
+            type: boolean
+            default: false
+ /getChallenge:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: Returns a challenge for the challenge and response authentication method. For more details see https://github.com/SICKAG/sick_scan_rest_client
+   operationId: Post
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        data:
+         type: object
+         properties: 
+          user:
+           $ref: '#/components/schemas/E_USER_LEVEL_TYPE'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         challenge:
+          type: object
+          properties: 
+           realm:
+            type: string
+            default: " "
+           nonce:
+            type: string
+            default: " "
+           opaque:
+            type: string
+            default: " "
+           salt:
+            type: array
+            maxItems: 16
+            minItems: 0
+            default: []
+            items: 
+             type: integer
+ /changePassword:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: 'Sets the password for the REST interface. For more details see https://github.com/SICKAG/sick_scan_rest_client.'
+   operationId: Post/changePassword
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        data:
+         type: object
+         properties: 
+          encryptedMessage:
+           type: array
+           maxItems: 96
+           minItems: 0
+           default: []
+           items: 
+            type: integer
+            format: uint8
+          userLevel:
+           $ref: '#/components/schemas/E_USER_LEVEL_TYPE'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           result:
+            type: integer
+            default: 0
+            enum: 
+            - 0
+            - 2
+            - 4
+            - 5
+            description: >
+             Mapping:
+              * 0 - SUCCESS
+              * 2 - NOT_ACCEPTED
+              * 4 - PWD_NOT_CHANGABLE
+              * 5 - TIMELOCK_ACTIVE
+ /EnableUserLevel:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Activates / deactivates a specific user level for the REST interface.
+
+     This function requires at least user level: Service.
+   operationId: Post/EnableUserLevel
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          userLevel:
+           type: integer
+           format: uint8
+          isEnabled:
+           type: boolean
+           default: false
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           result:
+            type: integer
+            default: 0
+            enum: 
+            - 0
+            - 2
+            description: >
+             Mapping:
+              * 0 - SUCCESS
+              * 2 - NOT_ACCEPTED
+ /OrderNumber:
+  get: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: 'Returns the order number (SICK part number).'
+   operationId: Get/OrderNumber
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            OrderNumber:
+             type: string
+             default: "1234567"
+             maxLength: 32
+ /DeviceStatus:
+  get: 
+   tags: 
+   - 2 - Status
+   summary: ""
+   description: 'Returns the device state (9 possible states).'
+   operationId: Get/DeviceStatus
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            DeviceStatus:
+             $ref: '#/components/schemas/DeviceStatus'
+ /WriteEeprom:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Saves all parameters permanently.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/WriteEeprom
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           Success:
+            type: boolean
+            default: False
+ /SCdevicestate:
+  get: 
+   tags: 
+   - 2 - Status
+   summary: ""
+   description: 'Returns the device state (busy, ready, or error).'
+   operationId: Get/SCdevicestate
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            SCdevicestate:
+             type: integer
+             default: 0
+             enum: 
+             - 0
+             - 1
+             - 2
+             description: >
+              Mapping:
+               * 0 - Busy
+               * 1 - Ready
+               * 2 - Error
+ /SoftReset:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Reboots the device. All non-saved parameters are lost.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/SoftReset
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          ProcessorNbr:
+           type: integer
+           format: uint16
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /RebootDevice:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Reboots the device. All parameters are saved.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/RebootDevice
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /LoadFactoryDefaults:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Resets all parameters to default.
+
+     This function requires at least user level: Service.
+   operationId: Post/LoadFactoryDefaults
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /LoadApplicationDefaults:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Resets only the user parametrization of the fields, evaluation cases, and parameters under the section "Application". Other parameters like interface settings, echo filter, etc. remain unchanged. This function requires the user level: Service.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/LoadApplicationDefaults
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /LastParaDate:
+  get: 
+   tags: 
+   - 10 - Operating Data
+   summary: ""
+   description: 'Returns the last date (e.g., 12.11.2024) when a permanent parameter save was executed.'
+   operationId: Get/LastParaDate
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            LastParaDate:
+             type: string
+             default: "DD.MM.YYYY"
+             maxLength: 10
+ /LastParaTime:
+  get: 
+   tags: 
+   - 10 - Operating Data
+   summary: ""
+   description: 'Returns the last time (e.g., 13:24) when a permanent parameter save was executed.'
+   operationId: Get/LastParaTime
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            LastParaTime:
+             type: string
+             default: "HH:MM"
+             maxLength: 5
+ /DoDiagnosisDump:
+  post: 
+   tags: 
+   - 11 - Diagnostics
+   summary: ""
+   description: |
+    Creates a diagnostic file (zip file) for further analysis.
+
+     This function requires at least user level: Service.
+   operationId: Post/DoDiagnosisDump
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          DoRunlevelLoop:
+           type: boolean
+           default: False
+          Output:
+           type: string
+           default: " "
+           maxLength: 64
+         example:
+          DoRunlevelLoop: True
+          Output: 'file'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           Successfull:
+            type: boolean
+            default: False
+ /GetDiagnosisDumpInfo:
+  post: 
+   tags: 
+   - 11 - Diagnostics
+   summary: ""
+   description: 'Returns additional meta-information about the diagnostic file.'
+   operationId: Post/GetDiagnosisDumpInfo
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       nullable: true
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           DiagDumpExists:
+            type: boolean
+            default: False
+           DiagDumpTimestamp:
+            type: integer
+            format: uint32
+ /OutputState:
+  get: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: 'Returns the state of all outputs.'
+   operationId: Get/OutputState
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           uiVersionNumber:
+            type: integer
+            format: uint16
+            default: 1
+           udiSystCount:
+            type: integer
+            format: uint32
+           aDigitalOut:
+            type: array
+            maxItems: 8
+            minItems: 8
+            items: 
+             type: object
+             properties: 
+              IOState:
+               $ref: '#/components/schemas/IOState_t'
+              udiCounter:
+               type: integer
+               format: uint32
+           aTimeBlock:
+            type: array
+            maxItems: 1
+            minItems: 0
+            default: []
+            items: 
+             $ref: '#/components/schemas/DateTime_t'
+ /PortState:
+  get: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: 'Returns the state of the ports. "PortState" is preferred over "OutputState".'
+   operationId: Get/PortState
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           uiVersionNumber:
+            type: integer
+            format: uint16
+           udiSystCount:
+            type: integer
+            format: uint32
+           aInternalPorts:
+            type: array
+            maxItems: 8
+            minItems: 0
+            default: []
+            items: 
+             $ref: '#/components/schemas/PortStateAndCounter_t'
+           aExternalPorts:
+            type: array
+            maxItems: 8
+            minItems: 0
+            default: []
+            items: 
+             $ref: '#/components/schemas/PortStateAndCounter_t'
+           aTimeBlock:
+            type: array
+            maxItems: 1
+            minItems: 0
+            default: []
+            items: 
+             $ref: '#/components/schemas/DateTime_t'
+ /mResetOutputCounter:
+  post: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: |
+    Resets the counter for the outputs.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/mResetOutputCounter
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           ErrorCode:
+            type: integer
+            default: 0
+            enum: 
+            - 0
+            - 1
+            description: >
+             Mapping:
+              * 0 - SOPAS_ERR_NO_ERR
+              * 1 - SOPAS_ERR_STATE_CHANGE_NOT_PERMITTED
+ /EtherIPAddress:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns/sets the used static IP address.'
+   operationId: Get/EtherIPAddress
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherIPAddress:
+             type: array
+             maxItems: 4
+             minItems: 4
+             default: [192,168,0,1]
+             items: 
+              type: integer
+              format: uint8
+  post: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: |
+    Returns/sets the used static IP address.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EtherIPAddress
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EtherIPAddress:
+           type: array
+           maxItems: 4
+           minItems: 4
+           default: [192,168,0,1]
+           items: 
+            type: integer
+            format: uint8
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EtherIPGateAddress:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns/sets the default gateway address.'
+   operationId: Get/EtherIPGateAddress
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherIPGateAddress:
+             type: array
+             maxItems: 4
+             minItems: 4
+             default: [0,0,0,0]
+             items: 
+              type: integer
+              format: uint8
+  post: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: |
+    Returns/sets the default gateway address.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EtherIPGateAddress
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EtherIPGateAddress:
+           type: array
+           maxItems: 4
+           minItems: 4
+           default: [0,0,0,0]
+           items: 
+            type: integer
+            format: uint8
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EtherIPMask:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns/sets the subnet mask.'
+   operationId: Get/EtherIPMask
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherIPMask:
+             type: array
+             maxItems: 4
+             minItems: 4
+             default: [255,255,255,0]
+             items: 
+              type: integer
+              format: uint8
+  post: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: |
+    Returns/sets the subnet mask.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EtherIPMask
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EtherIPMask:
+           type: array
+           maxItems: 4
+           minItems: 4
+           default: [255,255,255,0]
+           items: 
+            type: integer
+            format: uint8
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EtherAuxEnabled:
+  get: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: 'Enables/disables the legacy interface CoLa A/B. If enabled, CoLa A uses port 2111 and CoLa B uses 2112.'
+   operationId: Get/EtherAuxEnabled
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherAuxEnabled:
+             type: boolean
+             default: True
+  post: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: |
+    Enables/disables the legacy interface CoLa A/B. If enabled, CoLa A uses port 2111 and CoLa B uses 2112.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EtherAuxEnabled
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EtherAuxEnabled:
+           type: boolean
+           default: True
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EtherCoLaScanMode:
+  get: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: 'Configures the device search by SICK tools. If disabled, finding the device via device search and changing the IP address via SICK tools is not possible.'
+   operationId: Get/EtherCoLaScanMode
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherCoLaScanMode:
+             type: integer
+             default: 3
+             enum: 
+             - 0
+             - 1
+             - 2
+             - 3
+             description: >
+              Mapping:
+               * 0 - ENABLED
+               * 1 - IP_CONFIG_DISABLED
+               * 2 - DISABLED
+               * 3 - IP_CONFIG_TIME_LIMIT
+  post: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: |
+    Configures the device search by SICK tools. If disabled, finding the device via device search and changing the IP address via SICK tools is not possible.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EtherCoLaScanMode
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EtherCoLaScanMode:
+           type: integer
+           default: 3
+           enum: 
+           - 0
+           - 1
+           - 2
+           - 3
+           description: >
+            Mapping:
+             * 0 - ENABLED
+             * 1 - IP_CONFIG_DISABLED
+             * 2 - DISABLED
+             * 3 - IP_CONFIG_TIME_LIMIT
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EtherAddressingMode:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns/sets the mode for the IP address assignment (static or DHCP).'
+   operationId: Get/EtherAddressingMode
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherAddressingMode:
+             type: integer
+             default: 0
+             enum: 
+             - 0
+             - 1
+             description: >
+              Mapping:
+               * 0 - TX_IP_STATIC
+               * 1 - TX_IP_DHCP
+  post: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: |
+    Returns/sets the mode for the IP address assignment (static or DHCP).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EtherAddressingMode
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EtherAddressingMode:
+           type: integer
+           default: 0
+           enum: 
+           - 0
+           - 1
+           description: >
+            Mapping:
+             * 0 - TX_IP_STATIC
+             * 1 - TX_IP_DHCP
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EtherDHCPFallback:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns/sets the mode for the DHCP fallback (retry or static).'
+   operationId: Get/EtherDHCPFallback
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherDHCPFallback:
+             type: integer
+             default: 0
+             enum: 
+             - 0
+             - 1
+             description: >
+              Mapping:
+               * 0 - TX_USE_STATIC_IP
+               * 1 - TX_RETRY_DHCP
+  post: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: |
+    Returns/sets the mode for the DHCP fallback (retry or static).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EtherDHCPFallback
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EtherDHCPFallback:
+           type: integer
+           default: 0
+           enum: 
+           - 0
+           - 1
+           description: >
+            Mapping:
+             * 0 - TX_USE_STATIC_IP
+             * 1 - TX_RETRY_DHCP
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EthernetUpdate:
+  post: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: |
+    Applies the Ethernet settings. This needs to be executed to actually change the Ethernet settings.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/EthernetUpdate
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EtherIPAddressDHCP:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns the assigned DHCP IP address.'
+   operationId: Get/EtherIPAddressDHCP
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherIPAddressDHCP:
+             type: array
+             maxItems: 4
+             minItems: 4
+             default: [192,168,0,1]
+             items: 
+              type: integer
+              format: uint8
+ /EtherIPGateAddressDHCP:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns the assigned DHCP default gateway address.'
+   operationId: Get/EtherIPGateAddressDHCP
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherIPGateAddressDHCP:
+             type: array
+             maxItems: 4
+             minItems: 4
+             default: [0,0,0,0]
+             items: 
+              type: integer
+              format: uint8
+ /EtherIPMaskDHCP:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns the assigned DHCP subnet mask.'
+   operationId: Get/EtherIPMaskDHCP
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherIPMaskDHCP:
+             type: array
+             maxItems: 4
+             minItems: 4
+             default: [255,255,255,0]
+             items: 
+              type: integer
+              format: uint8
+ /httpsStatus:
+  get: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: 'Returns the status of the HTTPS interface.'
+   operationId: Get/httpsStatus
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           enabled:
+            type: boolean
+            default: False
+           errorCode:
+            $ref: '#/components/schemas/httpsError_t'
+ /certificateBundleInfo:
+  get: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: 'Returns information about the uploaded certificate bundle.'
+   operationId: Get/certificateBundleInfo
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           uuidBundle:
+            type: string
+            default: " "
+            maxLength: 100
+           certificates:
+            type: array
+            maxItems: 4
+            minItems: 0
+            default: []
+            items: 
+             type: object
+             properties: 
+              names:
+               type: array
+               maxItems: 20
+               minItems: 0
+               default: []
+               items: 
+                type: object
+                properties: 
+                 entry:
+                  type: string
+                  default: " "
+                  maxLength: 1000
+              issuer:
+               type: string
+               default: " "
+               maxLength: 1000
+              subject:
+               type: string
+               default: " "
+               maxLength: 1000
+              serialNumber:
+               type: string
+               default: " "
+               maxLength: 119
+              fingerprint:
+               type: string
+               default: " "
+               maxLength: 119
+              validNotBefore:
+               type: string
+               default: "                        "
+               maxLength: 24
+               minLength: 24
+              validNotAfter:
+               type: string
+               default: "                        "
+               maxLength: 24
+               minLength: 24
+           errorCode:
+            $ref: '#/components/schemas/httpsError_t'
+ /removeCertificateBundle:
+  post: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: |
+    Removes the uploaded certificate bundle.
+
+     This function requires at least user level: Service.
+   operationId: Post/removeCertificateBundle
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           success:
+            type: boolean
+            default: False
+           errorCode:
+            $ref: '#/components/schemas/httpsError_t'
+ /setCertificateBundle:
+  post: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: |
+    Uploads a certificate bundle in the PEM format via JSON.
+
+     This function requires at least user level: Service.
+   operationId: Post/setCertificateBundle
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          contentCertificateBundle:
+           type: string
+           default: " "
+           maxLength: 10000
+          contentPrivateKey:
+           type: string
+           default: " "
+           maxLength: 4000
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           success:
+            type: boolean
+            default: False
+           errorCode:
+            $ref: '#/components/schemas/httpsError_t'
+ /SetWebserverEnabled:
+  post: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: |
+    Sets the availability of the web server (reboot required). If disabled, the web server-based GUI and the REST interface cannot be used anymore.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/SetWebserverEnabled
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          Enable:
+           type: boolean
+           default: True
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /GetWebserverEnabled:
+  post: 
+   tags: 
+   - 12 - Cybersecurity
+   summary: ""
+   description: 'Returns the availability of the web server.'
+   operationId: Post/GetWebserverEnabled
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       nullable: true
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           IsEnabled:
+            type: boolean
+            default: True
+ /EnableLegacyUserLevel:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Activates / deactivates a specific user level for the CoLa A/B interface.
+
+     This function requires at least user level: Service.
+   operationId: Post/EnableLegacyUserLevel
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          userLevel:
+           type: integer
+           format: uint8
+           minimum: 0
+           maximum: 7
+          isEnabled:
+           type: boolean
+           default: False
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           result:
+            type: boolean
+            default: False
+ /EtherMACAddress:
+  get: 
+   tags: 
+   - 7 - Ethernet
+   summary: ""
+   description: 'Returns the MAC address of the Ethernet interface.'
+   operationId: Get/EtherMACAddress
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EtherMACAddress:
+             type: array
+             maxItems: 6
+             minItems: 6
+             default: [0,6,0x77,0,0,0]
+             items: 
+              type: integer
+              format: uint8
+ /PowerOnCnt:
+  get: 
+   tags: 
+   - 10 - Operating Data
+   summary: ""
+   description: 'Returns the number of power-on cycles.'
+   operationId: Get/PowerOnCnt
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            PowerOnCnt:
+             type: integer
+             format: uint32
+             default: 0
+ /DailyOpHours:
+  get: 
+   tags: 
+   - 10 - Operating Data
+   summary: ""
+   description: 'Returns the runtime duration since the last power-on (non-persistent).'
+   operationId: Get/DailyOpHours
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            DailyOpHours:
+             type: number
+             format: float
+             default: 0.0
+ /OpHours:
+  get: 
+   tags: 
+   - 10 - Operating Data
+   summary: ""
+   description: 'Returns the total number of operating hours during the lifetime of the device. The resolution is 1/10 hour.'
+   operationId: Get/OpHours
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            OpHours:
+             type: integer
+             format: uint32
+             default: 0
+ /DeviceType:
+  get: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: 'Returns the device type.'
+   operationId: Get/DeviceType
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            DeviceType:
+             type: string
+             default: "picoScan1xx"
+             maxLength: 18
+ /RunFirmwareUpdate:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Starts the firmware update process.
+
+     This function requires at least user level: Service.
+   operationId: Post/RunFirmwareUpdate
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /UpdateState:
+  get: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: 'Returns the state of the update process.'
+   operationId: Get/UpdateState
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            UpdateState:
+             type: integer
+             default: 0
+             enum: 
+             - 0
+             - 1
+             - 2
+             - 3
+             description: >
+              Mapping:
+               * 0 - Initial
+               * 1 - Started
+               * 2 - Finished
+               * 3 - Error
+ /CreateParameterBackup:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Creates a parameter backup file on the device.
+
+     This function requires at least user level: Service.
+   operationId: Post/CreateParameterBackup
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          Passphrase:
+           type: string
+           default: " "
+           maxLength: 256
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           Result:
+            type: boolean
+            default: False
+ /RestoreParameterBackup:
+  post: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: |
+    Restores the backup file on the device. The restored parameters will then be applied.
+
+     This function requires at least user level: Service.
+   operationId: Post/RestoreParameterBackup
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          Passphrase:
+           type: string
+           default: " "
+           maxLength: 256
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           Result:
+            type: boolean
+            default: False
+ /ScanDataEthSettings:
+  get: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: 'Returns/sets the destination IP address settings for measurement data streaming (UDP).'
+   operationId: Get/ScanDataEthSettings
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           Protocol:
+            type: integer
+            default: 1
+            enum: 
+            - 1
+            - 2
+            description: >
+             Mapping:
+              * 1 - UDP
+              * 2 - TCP
+           IPAddress:
+            type: array
+            maxItems: 4
+            minItems: 0
+            default: [192,168,0,100]
+            items: 
+             type: integer
+             format: uint8
+           Port:
+            type: integer
+            format: uint16
+            default: 2115
+  post: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: |
+    Returns/sets the destination IP address settings for measurement data streaming (UDP).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/ScanDataEthSettings
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          ScanDataEthSettings:
+           type: object
+           properties: 
+            Protocol:
+             type: integer
+             default: 1
+             enum: 
+             - 1
+             - 2
+             description: >
+              Mapping:
+               * 1 - UDP
+               * 2 - TCP
+            IPAddress:
+             type: array
+             maxItems: 4
+             minItems: 0
+             default: [192,168,0,100]
+             items: 
+              type: integer
+              format: uint8
+            Port:
+             type: integer
+             format: uint16
+             default: 2115
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /ScanDataEnable:
+  get: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: 'Enables/disables the measurement data streaming. The measurement data itself is sent via a UDP-based SICK-specific format. A Python example can be found at https://github.com/SICKAG/ScanSegmentAPI.'
+   operationId: Get/ScanDataEnable
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            ScanDataEnable:
+             type: boolean
+             default: False
+  post: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: |
+    Enables/disables the measurement data streaming. The measurement data itself is sent via a UDP-based SICK-specific format. A Python example can be found at https://github.com/SICKAG/ScanSegmentAPI.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/ScanDataEnable
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          ScanDataEnable:
+           type: boolean
+           default: False
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /ScanDataFormat:
+  get: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: 'Returns/sets the scan data format (e.g., Compact format).'
+   operationId: Get/ScanDataFormat
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            ScanDataFormat:
+             type: integer
+             default: 2
+             enum: 
+             - 1
+             - 2
+             - 3
+             - 4
+             description: >
+              Mapping:
+               * 1 - MSGPACK
+               * 2 - Compact
+               * 3 - LMDscandata
+               * 4 - NativeROS2
+  post: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: |
+    Returns/sets the scan data format (e.g., Compact format).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/ScanDataFormat
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          ScanDataFormat:
+           type: integer
+           default: 2
+           enum: 
+           - 1
+           - 2
+           - 3
+           - 4
+           description: >
+            Mapping:
+             * 1 - MSGPACK
+             * 2 - Compact
+             * 3 - LMDscandata
+             * 4 - NativeROS2
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /rosFrameId:
+  get: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: 'Returns/sets the frame ID of the published topics.'
+   operationId: Get/rosFrameId
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            rosFrameId:
+             type: string
+             default: "picoScan_"
+             maxLength: 64
+  post: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: |
+    Returns/sets the frame ID of the published topics.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/rosFrameId
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          rosFrameId:
+           type: string
+           default: "picoScan_"
+           maxLength: 64
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /rosParentFrameId:
+  get: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: 'Returns/sets the parent frame ID of the published topics.'
+   operationId: Get/rosParentFrameId
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            rosParentFrameId:
+             type: string
+             default: "world"
+             maxLength: 64
+  post: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: |
+    Returns/sets the parent frame ID of the published topics.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/rosParentFrameId
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          rosParentFrameId:
+           type: string
+           default: "world"
+           maxLength: 64
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /rosNamespace:
+  get: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: 'Returns/sets the namespace of the published topics.'
+   operationId: Get/rosNamespace
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            rosNamespace:
+             type: string
+             default: " "
+             maxLength: 64
+  post: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: |
+    Returns/sets the namespace of the published topics.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/rosNamespace
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          rosNamespace:
+           type: string
+           default: " "
+           maxLength: 64
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /PortConfiguration:
+  get: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: 'Returns/sets the port configuration of all I/Os.'
+   operationId: Get/PortConfiguration
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            PortConfiguration:
+             type: array
+             maxItems: 8
+             minItems: 8
+             items: 
+              type: object
+              properties: 
+               PortType:
+                type: integer
+                default: 0
+                enum: 
+                - 0
+                - 1
+                - 2
+                description: >
+                 Mapping:
+                  * 0 - INPUT
+                  * 1 - OUTPUT
+                  * 2 - ENCODER
+               Name:
+                type: string
+                default: "IOx"
+                maxLength: 20
+               InputSettings:
+                type: object
+                properties: 
+                 Logic:
+                  $ref: '#/components/schemas/Logic_t'
+                 Debounce:
+                  type: integer
+                  format: uint16
+                  minimum: 1
+                  maximum: 1000
+                  default: 10
+                 Sensitivity:
+                  type: integer
+                  default: 0
+                  enum: 
+                  - 0
+                  - 1
+                  description: >
+                   Mapping:
+                    * 0 - EDGE
+                    * 1 - LEVEL
+                 Reserved1:
+                  type: integer
+                  format: uint16
+                  default: 0
+                 Reserved2:
+                  type: integer
+                  format: uint16
+                  default: 0
+               OutputSettings:
+                type: object
+                properties: 
+                 Logic:
+                  $ref: '#/components/schemas/Logic_t'
+                 OutputMode:
+                  type: integer
+                  default: 0
+                  enum: 
+                  - 0
+                  - 1
+                  - 2
+                  description: >
+                   Mapping:
+                    * 0 - PNP
+                    * 1 - NPN
+                    * 2 - PUSH_PULL
+                 RestartType:
+                  type: integer
+                  default: 0
+                  enum: 
+                  - 0
+                  - 1
+                  - 2
+                  description: >
+                   Mapping:
+                    * 0 - RESTART_IMMEDATE
+                    * 1 - RESTART_TIME
+                    * 2 - RESTART_INPUT
+                 RestartTime:
+                  type: integer
+                  format: uint32
+                  minimum: 20
+                  maximum: 600000
+                  default: 200
+                 RestartInput:
+                  type: integer
+                  format: uint16
+                  minimum: 1
+                  maximum: 8
+                  default: 1
+                 Combination:
+                  type: integer
+                  default: 1
+                  enum: 
+                  - 0
+                  - 1
+                  - 2
+                  description: >
+                   Mapping:
+                    * 0 - AND
+                    * 1 - OR
+                    * 2 - XOR
+                 Reserved3:
+                  type: integer
+                  format: uint16
+                  default: 0
+                 Reserved4:
+                  type: integer
+                  format: uint16
+                  default: 0
+                 Sources:
+                  type: array
+                  maxItems: 128
+                  minItems: 0
+                  default: []
+                  items: 
+                   type: object
+                   properties: 
+                    Name:
+                     type: string
+                     default: "    "
+                     maxLength: 4
+                     minLength: 4
+                    Invert:
+                     type: boolean
+                     default: False
+                    Reserved5:
+                     type: integer
+                     format: uint8
+                     default: 0
+                    Reserved6:
+                     type: integer
+                     format: uint8
+                     default: 0
+               EncoderPortType:
+                type: integer
+                default: 0
+                enum: 
+                - 0
+                - 1
+                - 2
+                - 3
+                - 4
+                description: >
+                 Mapping:
+                  * 0 - NONE
+                  * 1 - ENCODER_A
+                  * 2 - ENCODER_B
+                  * 3 - AUX1
+                  * 4 - AUX2
+               Reserved8:
+                type: integer
+                format: uint16
+                default: 0
+               Reserved9:
+                type: integer
+                format: uint16
+                default: 0
+               Reserved10:
+                type: integer
+                format: uint16
+                default: 0
+  post: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: |
+    Returns/sets the port configuration of all I/Os.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/PortConfiguration
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          PortConfiguration:
+           type: array
+           maxItems: 8
+           minItems: 8
+           items: 
+            type: object
+            properties: 
+             PortType:
+              type: integer
+              default: 0
+              enum: 
+              - 0
+              - 1
+              - 2
+              description: >
+               Mapping:
+                * 0 - INPUT
+                * 1 - OUTPUT
+                * 2 - ENCODER
+             Name:
+              type: string
+              default: "IOx"
+              maxLength: 20
+             InputSettings:
+              type: object
+              properties: 
+               Logic:
+                $ref: '#/components/schemas/Logic_t'
+               Debounce:
+                type: integer
+                format: uint16
+                minimum: 1
+                maximum: 1000
+                default: 10
+               Sensitivity:
+                type: integer
+                default: 0
+                enum: 
+                - 0
+                - 1
+                description: >
+                 Mapping:
+                  * 0 - EDGE
+                  * 1 - LEVEL
+               Reserved1:
+                type: integer
+                format: uint16
+                default: 0
+               Reserved2:
+                type: integer
+                format: uint16
+                default: 0
+             OutputSettings:
+              type: object
+              properties: 
+               Logic:
+                $ref: '#/components/schemas/Logic_t'
+               OutputMode:
+                type: integer
+                default: 0
+                enum: 
+                - 0
+                - 1
+                - 2
+                description: >
+                 Mapping:
+                  * 0 - PNP
+                  * 1 - NPN
+                  * 2 - PUSH_PULL
+               RestartType:
+                type: integer
+                default: 0
+                enum: 
+                - 0
+                - 1
+                - 2
+                description: >
+                 Mapping:
+                  * 0 - RESTART_IMMEDATE
+                  * 1 - RESTART_TIME
+                  * 2 - RESTART_INPUT
+               RestartTime:
+                type: integer
+                format: uint32
+                minimum: 20
+                maximum: 600000
+                default: 200
+               RestartInput:
+                type: integer
+                format: uint16
+                minimum: 1
+                maximum: 8
+                default: 1
+               Combination:
+                type: integer
+                default: 1
+                enum: 
+                - 0
+                - 1
+                - 2
+                description: >
+                 Mapping:
+                  * 0 - AND
+                  * 1 - OR
+                  * 2 - XOR
+               Reserved3:
+                type: integer
+                format: uint16
+                default: 0
+               Reserved4:
+                type: integer
+                format: uint16
+                default: 0
+               Sources:
+                type: array
+                maxItems: 128
+                minItems: 0
+                default: []
+                items: 
+                 type: object
+                 properties: 
+                  Name:
+                   type: string
+                   default: "    "
+                   maxLength: 4
+                   minLength: 4
+                  Invert:
+                   type: boolean
+                   default: False
+                  Reserved5:
+                   type: integer
+                   format: uint8
+                   default: 0
+                  Reserved6:
+                   type: integer
+                   format: uint8
+                   default: 0
+             EncoderPortType:
+              type: integer
+              default: 0
+              enum: 
+              - 0
+              - 1
+              - 2
+              - 3
+              - 4
+              description: >
+               Mapping:
+                * 0 - NONE
+                * 1 - ENCODER_A
+                * 2 - ENCODER_B
+                * 3 - AUX1
+                * 4 - AUX2
+             Reserved8:
+              type: integer
+              format: uint16
+              default: 0
+             Reserved9:
+              type: integer
+              format: uint16
+              default: 0
+             Reserved10:
+              type: integer
+              format: uint16
+              default: 0
+         example:
+          - PortType: 0
+            Name: InOut1
+            InputSettings:
+              Logic: 0
+              Debounce: 1
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 1
+              OutputMode: 0
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources: []
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+          - PortType: 1
+            Name: InOut2
+            InputSettings:
+              Logic: 0
+              Debounce: 10
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 1
+              OutputMode: 2
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources:
+              - Name: DRDY
+                Invert: false
+                Reserved5: 0
+                Reserved6: 0
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+          - PortType: 1
+            Name: InOut3
+            InputSettings:
+              Logic: 0
+              Debounce: 10
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 0
+              OutputMode: 0
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources:
+              - Name: FE01
+                Invert: false
+                Reserved5: 0
+                Reserved6: 0
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+          - PortType: 0
+            Name: InOut4
+            InputSettings:
+              Logic: 0
+              Debounce: 10
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 0
+              OutputMode: 0
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources: []
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+          - PortType: 0
+            Name: InOut5
+            InputSettings:
+              Logic: 0
+              Debounce: 10
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 0
+              OutputMode: 0
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources: []
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+          - PortType: 0
+            Name: InOut6
+            InputSettings:
+              Logic: 0
+              Debounce: 10
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 0
+              OutputMode: 0
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources: []
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+          - PortType: 1
+            Name: InOut7
+            InputSettings:
+              Logic: 0
+              Debounce: 10
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 1
+              OutputMode: 0
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources:
+              - Name: DRDY
+                Invert: false
+                Reserved5: 0
+                Reserved6: 0
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+          - PortType: 1
+            Name: InOut8
+            InputSettings:
+              Logic: 0
+              Debounce: 10
+              Sensitivity: 1
+              Reserved1: 0
+              Reserved2: 0
+            OutputSettings:
+              Logic: 1
+              OutputMode: 0
+              RestartType: 0
+              RestartTime: 200
+              RestartInput: 1
+              Combination: 1
+              Reserved3: 0
+              Reserved4: 0
+              Sources:
+              - Name: DRDY
+                Invert: false
+                Reserved5: 0
+                Reserved6: 0
+            Reserved7: 0
+            Reserved8: 0
+            Reserved9: 0
+            Reserved10: 0
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /SetOutput:
+  post: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: 'Sets the output state for an individual output. Precondition is to set the output source to "SOPAS command".'
+   operationId: Post/SetOutput
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        data:
+         type: object
+         properties: 
+          Output:
+           type: integer
+           format: uint8
+          Value:
+           type: integer
+           format: uint8
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           Success:
+            type: boolean
+            default: false
+ /LEDState:
+  get: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: 'Returns the LED status.'
+   operationId: Get/LEDState
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            LEDState:
+             type: array
+             maxItems: 8
+             minItems: 0
+             default: []
+             items: 
+              $ref: '#/components/schemas/LedStateType'
+ /LEDEnable:
+  get: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: 'Returns/sets the LED mode (on/off).'
+   operationId: Get/LEDEnable
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            LEDEnable:
+             type: boolean
+             default: True
+  post: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: |
+    Returns/sets the LED mode (on/off).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/LEDEnable
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          LEDEnable:
+           type: boolean
+           default: True
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /FindMe:
+  post: 
+   tags: 
+   - 3 - Device Information
+   summary: ""
+   description: 'Sets the device LEDs into blinking mode for better identification.'
+   operationId: Post/FindMe
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        data:
+         type: object
+         properties: 
+          uiDuration:
+           type: integer
+           format: uint16
+         example:
+          uiDuration: 100
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /LFTchecksum:
+  get: 
+   tags: 
+   - 1 - General
+   summary: ""
+   description: 'Returns a checksum over all software parts and configurations.'
+   operationId: Get/LFTchecksum
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           MD5SumOK:
+            type: boolean
+            default: False
+           MD5LinuxRoot:
+            type: string
+            default: " "
+            maxLength: 32
+           MD5App:
+            type: string
+            default: " "
+            maxLength: 32
+           MD5Calibration:
+            type: string
+            default: " "
+            maxLength: 32
+           MD5Parameters:
+            type: string
+            default: " "
+            maxLength: 32
+ /mStartMeasure:
+  post: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: |
+    Starts motor and measurement.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/mStartMeasure
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           ErrorCode:
+            type: integer
+            default: 0
+            enum: 
+            - 0
+            - 1
+            description: >
+             Mapping:
+              * 0 - SOPAS_ERR_NO_ERR
+              * 1 - SOPAS_ERR_STATE_CHANGE_NOT_PERMITTED
+ /mStandby:
+  post: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: |
+    Enables/disables the laser (on/off).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/mStandby
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           ErrorCode:
+            type: integer
+            default: 0
+            enum: 
+            - 0
+            - 1
+            description: >
+             Mapping:
+              * 0 - SOPAS_ERR_NO_ERR
+              * 1 - SOPAS_ERR_STATE_CHANGE_NOT_PERMITTED
+ /mStopMeasure:
+  post: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: |
+    Stops motor and measurement.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/mStopMeasure
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           ErrorCode:
+            type: integer
+            default: 0
+            enum: 
+            - 0
+            - 1
+            description: >
+             Mapping:
+              * 0 - SOPAS_ERR_NO_ERR
+              * 1 - SOPAS_ERR_STATE_CHANGE_NOT_PERMITTED
+ /AutoStartMeasure:
+  get: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: 'Returns/sets the mode for automatic start of measurement after boot-up.'
+   operationId: Get/AutoStartMeasure
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            AutoStartMeasure:
+             type: boolean
+             default: True
+  post: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: 'Returns/sets the mode for automatic start of measurement after boot-up.'
+   operationId: Post/AutoStartMeasure
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        data:
+         type: object
+         properties: 
+          AutoStartMeasure:
+           type: boolean
+           default: True
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /ScanConfig:
+  get: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: 'Configuration of angular resolution, scanning frequency, start and stop angle.'
+   operationId: Get/ScanConfig
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           udiScanFreq:
+            type: integer
+            format: uint32
+            minimum: 1500
+            maximum: 5000
+            default: 2000
+           ScanRange:
+            type: object
+            properties: 
+             uiLength:
+              type: integer
+              format: uint16
+              minimum: 1
+              maximum: 1
+              default: 1
+             aRange:
+              type: array
+              maxItems: 1
+              minItems: 1
+              items: 
+               type: object
+               properties: 
+                udiAngleRes:
+                 type: integer
+                 format: uint32
+                 minimum: 500
+                 maximum: 10000
+                 default: 1000
+                diStartAngle:
+                 type: integer
+                 format: int32
+                 minimum: -1380000
+                 maximum: 1380000
+                 default: -1380000
+                diStopAngle:
+                 type: integer
+                 format: int32
+                 minimum: -1380000
+                 maximum: 1380000
+                 default: 1380000
+ /temperatureAlarmConfiguration:
+  get: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: 'Returns/sets temperature alarm thresholds.'
+   operationId: Get/temperatureAlarmConfiguration
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           upperThreshold:
+            type: integer
+            format: int8
+            default: 55
+           lowerThreshold:
+            type: integer
+            format: int8
+            default: 50
+  post: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: |
+    Returns/sets temperature alarm thresholds.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/temperatureAlarmConfiguration
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          temperatureAlarmConfiguration:
+           type: object
+           properties: 
+            upperThreshold:
+             type: integer
+             format: int8
+             default: 55
+            lowerThreshold:
+             type: integer
+             format: int8
+             default: 50
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /temperatureAlarmStatus:
+  get: 
+   tags: 
+   - 8 - Inputs And Outputs
+   summary: ""
+   description: 'Returns the current temperature alarm status.'
+   operationId: Get/temperatureAlarmStatus
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            temperatureAlarmStatus:
+             type: boolean
+             default: False
+ /CurrentTempDev:
+  get: 
+   tags: 
+   - 10 - Operating Data
+   summary: ""
+   description: 'Returns the current device temperature.'
+   operationId: Get/CurrentTempDev
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            CurrentTempDev:
+             type: number
+             format: float
+             default: 20.0
+ /operatingMode:
+  get: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: 'Returns/sets the operating mode of the receiver unit.'
+   operationId: Get/operatingMode
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            operatingMode:
+             type: integer
+             default: 0
+             enum: 
+             - 0
+             - 1
+             description: >
+              Mapping:
+               * 0 - STANDARD
+               * 1 - REFLECTOR_OPTIMIZATION_MODE
+  post: 
+   tags: 
+   - 4 - Basic Settings
+   summary: ""
+   description: |
+    Returns/sets the operating mode of the receiver unit.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/operatingMode
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          operatingMode:
+           type: integer
+           default: 0
+           enum: 
+           - 0
+           - 1
+           description: >
+            Mapping:
+             * 0 - STANDARD
+             * 1 - REFLECTOR_OPTIMIZATION_MODE
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /LFPparticle:
+  get: 
+   tags: 
+   - 6 - Filter
+   summary: ""
+   description: 'Returns/sets the particle filter settings. Filters out disturbances in the measurement data caused by particles such as dust, snowflakes, or similar. Configure the minimal threshold of the required distance step (mm) between the echo to be filtered and the echoes of surrounding beam angles.'
+   operationId: Get/LFPparticle
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           bEnable:
+            type: boolean
+            default: False
+           uiThreshold:
+            type: integer
+            format: uint16
+            minimum: 20
+            maximum: 5000
+            default: 500
+  post: 
+   tags: 
+   - 6 - Filter
+   summary: ""
+   description: |
+    Returns/sets the particle filter settings. Filters out disturbances in the measurement data caused by particles such as dust, snowflakes, or similar. Configure the minimal threshold of the required distance step (mm) between the echo to be filtered and the echoes of surrounding beam angles.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/LFPparticle
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          LFPparticle:
+           type: object
+           properties: 
+            bEnable:
+             type: boolean
+             default: False
+            uiThreshold:
+             type: integer
+             format: uint16
+             minimum: 20
+             maximum: 5000
+             default: 500
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /SensorPosition:
+  get: 
+   tags: 
+   - 9 - Measurement Data Output
+   summary: ""
+   description: 'Returns/sets the mounting position in 1/10000 deg. This only affects the PointCloud2 format output by native ROS2.'
+   operationId: Get/SensorPosition
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           x:
+            type: integer
+            format: int32
+            minimum: -100000
+            maximum: 100000
+            default: 0
+           y:
+            type: integer
+            format: int32
+            minimum: -100000
+            maximum: 100000
+            default: 0
+           z:
+            type: integer
+            format: int32
+            minimum: -100000
+            maximum: 100000
+            default: 0
+           yaw:
+            type: integer
+            format: int32
+            minimum: -3600000
+            maximum: 3600000
+            default: 0
+           pitch:
+            type: integer
+            format: int32
+            minimum: -3600000
+            maximum: 3600000
+            default: 0
+           roll:
+            type: integer
+            format: int32
+            minimum: -3600000
+            maximum: 3600000
+            default: 0
+ /TSCRole:
+  get: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: 'Returns/sets the time synchronization role (none, NTP, or PTP).'
+   operationId: Get/TSCRole
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            TSCRole:
+             type: integer
+             default: 0
+             enum: 
+             - 0
+             - 1
+             - 3
+             description: >
+              Mapping:
+               * 0 - TX_NONE
+               * 1 - TX_CLIENT
+               * 3 - TX_PTP_SLAVE
+  post: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: |
+    Returns/sets the time synchronization role (none, NTP, or PTP).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/TSCRole
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          TSCRole:
+           type: integer
+           default: 0
+           enum: 
+           - 0
+           - 1
+           - 3
+           description: >
+            Mapping:
+             * 0 - TX_NONE
+             * 1 - TX_CLIENT
+             * 3 - TX_PTP_SLAVE
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /TSCTCSrvAddr:
+  get: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: 'Returns/sets the IP address of the time server.'
+   operationId: Get/TSCTCSrvAddr
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            TSCTCSrvAddr:
+             type: array
+             maxItems: 4
+             minItems: 0
+             default: [192,168,0,11]
+             items: 
+              type: integer
+              format: uint8
+  post: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: |
+    Returns/sets the IP address of the time server.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/TSCTCSrvAddr
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          TSCTCSrvAddr:
+           type: array
+           maxItems: 4
+           minItems: 0
+           default: [192,168,0,11]
+           items: 
+            type: integer
+            format: uint8
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /TSCTCtimezone:
+  get: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: 'Returns/sets the time zone of the client.'
+   operationId: Get/TSCTCtimezone
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            TSCTCtimezone:
+             type: integer
+             default: 36
+             enum: 
+             - 0
+             - 1
+             - 2
+             - 3
+             - 4
+             - 5
+             - 6
+             - 7
+             - 8
+             - 9
+             - 10
+             - 11
+             - 12
+             - 13
+             - 14
+             - 15
+             - 16
+             - 17
+             - 18
+             - 19
+             - 20
+             - 21
+             - 22
+             - 23
+             - 24
+             - 25
+             - 26
+             - 27
+             - 28
+             - 29
+             - 30
+             - 31
+             - 32
+             - 33
+             - 34
+             - 35
+             - 36
+             - 37
+             - 38
+             - 39
+             - 40
+             - 41
+             - 42
+             - 43
+             - 44
+             - 45
+             - 46
+             - 47
+             - 48
+             - 49
+             - 50
+             - 51
+             - 52
+             - 53
+             - 54
+             - 55
+             - 56
+             - 57
+             - 58
+             - 59
+             - 60
+             - 61
+             - 62
+             - 63
+             - 64
+             - 65
+             - 66
+             - 67
+             - 68
+             - 69
+             - 70
+             - 71
+             - 72
+             - 73
+             - 74
+             - 75
+             - 76
+             - 77
+             - 78
+             - 79
+             - 80
+             - 81
+             - 82
+             - 83
+             - 84
+             - 85
+             - 86
+             - 87
+             - 88
+             - 89
+             - 90
+             - 91
+             - 92
+             - 93
+             - 94
+             - 95
+             - 96
+             - 97
+             - 98
+             - 99
+             - 100
+             - 101
+             - 102
+             - 103
+             - 104
+             description: >
+              Mapping:
+               * 0 - DATE_LINE_STANDARD
+               * 1 - COORD_WORLD_TIME_11
+               * 2 - HAWAII
+               * 3 - ALASKA
+               * 4 - CALIFORNIA
+               * 5 - USA_CANADA
+               * 6 - ARIZONA
+               * 7 - LA_PAZ
+               * 8 - MOUNTAIN_TIME_USA
+               * 9 - CENTRAL_TIME_USA
+               * 10 - MEXICO_CITY
+               * 11 - MIDDLE_AMERICA
+               * 12 - SASKATCHEWAN
+               * 13 - BOGOTA_LIMA
+               * 14 - EASTERN_TIME_USA
+               * 15 - INDIANA
+               * 16 - CARACAS
+               * 17 - ASUNCION
+               * 18 - ATLANTIC_KANADA
+               * 19 - CUIABA
+               * 20 - LAPAZ_SANJUAN
+               * 21 - SANTIAGO
+               * 22 - NEUFUNDLAND
+               * 23 - BRASILIA
+               * 24 - BUENOS_AIRES
+               * 25 - CAYENNE_FORTALEZA
+               * 26 - GROENLAND
+               * 27 - MONTEVIDEO
+               * 28 - SALVADOR
+               * 29 - COORD_WORLD_TIME_02
+               * 30 - AZOREN
+               * 31 - KAP_VERDE
+               * 32 - CASABLANCA
+               * 33 - DUBLIN_LISSABON_LONDON
+               * 34 - COORD_WORLD_TIME
+               * 35 - MONROVIA_REYKJAVIK
+               * 36 - AMSTERDAM_BERLIN_ROM
+               * 37 - BELGRAD_BUDAPEST_PRAG
+               * 38 - BRUESSEL_MADRID_PARIS
+               * 39 - SARAJEVO_WARSCHAU
+               * 40 - WEST_CENTRAL_AFRICA
+               * 41 - WINDHUK
+               * 42 - JOHANNESBURG
+               * 43 - AMMAN
+               * 44 - ATHEN_BUKAREST
+               * 45 - BEIRUT
+               * 46 - DAMASCUS
+               * 47 - HARARE_PRETORIA
+               * 48 - HELSINKI_KIEW_RIGA
+               * 49 - ISTANBUL
+               * 50 - JERUSALEM
+               * 51 - KAIRO
+               * 52 - KALININGRAD
+               * 53 - TRIPOLIS
+               * 54 - BAGDAD
+               * 55 - KUWAIT_RIAD
+               * 56 - MINSK
+               * 57 - MOSKAU_PETERSBURG
+               * 58 - NAIROBI
+               * 59 - TEHERAN
+               * 60 - ABU_DHABI
+               * 61 - BAKU
+               * 62 - ERIWAN
+               * 63 - ISCHEWSK_SAMARA
+               * 64 - PORT_LOUIS
+               * 65 - TIFLIS
+               * 66 - KABUL
+               * 67 - ASCHGABET_TASCHKENT
+               * 68 - ISLAMABAD_KARATSCHI
+               * 69 - JEKATERINBURG
+               * 70 - MUMBAI_NEUDELHI
+               * 71 - SRI_JAYAWARDENEPURA
+               * 72 - KATMANDU
+               * 73 - ASTANA
+               * 74 - DAKKA
+               * 75 - NOWOSIBIRSK
+               * 76 - YANGON
+               * 77 - BANGKOK_HANOI_JAKARTA
+               * 78 - KRASNOJARSK
+               * 79 - IRKUTSK
+               * 80 - KUALA_LUMPUR_SINGAPUR
+               * 81 - PEKING_HONGKONG
+               * 82 - PERTH
+               * 83 - TAIPEH
+               * 84 - ULAN_BATOR
+               * 85 - JAKUTSK
+               * 86 - OSAKA_TOKIO
+               * 87 - SEOUL
+               * 88 - ADELAIDE
+               * 89 - DARWIN
+               * 90 - BRISBANE
+               * 91 - CANBERRA_SYDNEY
+               * 92 - GUAM_PORT_MORESBY
+               * 93 - HOBART
+               * 94 - MAGADAN
+               * 95 - WLADIWOSTOK
+               * 96 - SALOMONEN_KALEDONIEN
+               * 97 - TSCHOKURDACH
+               * 98 - ANADYR
+               * 99 - AUCKLAND_WELLINGTON
+               * 100 - FIDSCHI
+               * 101 - COORD_WORLD_TIME_12
+               * 102 - NAKUALOFA
+               * 103 - SAMOA
+               * 104 - KIRITIMATI
+  post: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: |
+    Returns/sets the time zone of the client.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/TSCTCtimezone
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          TSCTCtimezone:
+           type: integer
+           default: 36
+           enum: 
+           - 0
+           - 1
+           - 2
+           - 3
+           - 4
+           - 5
+           - 6
+           - 7
+           - 8
+           - 9
+           - 10
+           - 11
+           - 12
+           - 13
+           - 14
+           - 15
+           - 16
+           - 17
+           - 18
+           - 19
+           - 20
+           - 21
+           - 22
+           - 23
+           - 24
+           - 25
+           - 26
+           - 27
+           - 28
+           - 29
+           - 30
+           - 31
+           - 32
+           - 33
+           - 34
+           - 35
+           - 36
+           - 37
+           - 38
+           - 39
+           - 40
+           - 41
+           - 42
+           - 43
+           - 44
+           - 45
+           - 46
+           - 47
+           - 48
+           - 49
+           - 50
+           - 51
+           - 52
+           - 53
+           - 54
+           - 55
+           - 56
+           - 57
+           - 58
+           - 59
+           - 60
+           - 61
+           - 62
+           - 63
+           - 64
+           - 65
+           - 66
+           - 67
+           - 68
+           - 69
+           - 70
+           - 71
+           - 72
+           - 73
+           - 74
+           - 75
+           - 76
+           - 77
+           - 78
+           - 79
+           - 80
+           - 81
+           - 82
+           - 83
+           - 84
+           - 85
+           - 86
+           - 87
+           - 88
+           - 89
+           - 90
+           - 91
+           - 92
+           - 93
+           - 94
+           - 95
+           - 96
+           - 97
+           - 98
+           - 99
+           - 100
+           - 101
+           - 102
+           - 103
+           - 104
+           description: >
+            Mapping:
+             * 0 - DATE_LINE_STANDARD
+             * 1 - COORD_WORLD_TIME_11
+             * 2 - HAWAII
+             * 3 - ALASKA
+             * 4 - CALIFORNIA
+             * 5 - USA_CANADA
+             * 6 - ARIZONA
+             * 7 - LA_PAZ
+             * 8 - MOUNTAIN_TIME_USA
+             * 9 - CENTRAL_TIME_USA
+             * 10 - MEXICO_CITY
+             * 11 - MIDDLE_AMERICA
+             * 12 - SASKATCHEWAN
+             * 13 - BOGOTA_LIMA
+             * 14 - EASTERN_TIME_USA
+             * 15 - INDIANA
+             * 16 - CARACAS
+             * 17 - ASUNCION
+             * 18 - ATLANTIC_KANADA
+             * 19 - CUIABA
+             * 20 - LAPAZ_SANJUAN
+             * 21 - SANTIAGO
+             * 22 - NEUFUNDLAND
+             * 23 - BRASILIA
+             * 24 - BUENOS_AIRES
+             * 25 - CAYENNE_FORTALEZA
+             * 26 - GROENLAND
+             * 27 - MONTEVIDEO
+             * 28 - SALVADOR
+             * 29 - COORD_WORLD_TIME_02
+             * 30 - AZOREN
+             * 31 - KAP_VERDE
+             * 32 - CASABLANCA
+             * 33 - DUBLIN_LISSABON_LONDON
+             * 34 - COORD_WORLD_TIME
+             * 35 - MONROVIA_REYKJAVIK
+             * 36 - AMSTERDAM_BERLIN_ROM
+             * 37 - BELGRAD_BUDAPEST_PRAG
+             * 38 - BRUESSEL_MADRID_PARIS
+             * 39 - SARAJEVO_WARSCHAU
+             * 40 - WEST_CENTRAL_AFRICA
+             * 41 - WINDHUK
+             * 42 - JOHANNESBURG
+             * 43 - AMMAN
+             * 44 - ATHEN_BUKAREST
+             * 45 - BEIRUT
+             * 46 - DAMASCUS
+             * 47 - HARARE_PRETORIA
+             * 48 - HELSINKI_KIEW_RIGA
+             * 49 - ISTANBUL
+             * 50 - JERUSALEM
+             * 51 - KAIRO
+             * 52 - KALININGRAD
+             * 53 - TRIPOLIS
+             * 54 - BAGDAD
+             * 55 - KUWAIT_RIAD
+             * 56 - MINSK
+             * 57 - MOSKAU_PETERSBURG
+             * 58 - NAIROBI
+             * 59 - TEHERAN
+             * 60 - ABU_DHABI
+             * 61 - BAKU
+             * 62 - ERIWAN
+             * 63 - ISCHEWSK_SAMARA
+             * 64 - PORT_LOUIS
+             * 65 - TIFLIS
+             * 66 - KABUL
+             * 67 - ASCHGABET_TASCHKENT
+             * 68 - ISLAMABAD_KARATSCHI
+             * 69 - JEKATERINBURG
+             * 70 - MUMBAI_NEUDELHI
+             * 71 - SRI_JAYAWARDENEPURA
+             * 72 - KATMANDU
+             * 73 - ASTANA
+             * 74 - DAKKA
+             * 75 - NOWOSIBIRSK
+             * 76 - YANGON
+             * 77 - BANGKOK_HANOI_JAKARTA
+             * 78 - KRASNOJARSK
+             * 79 - IRKUTSK
+             * 80 - KUALA_LUMPUR_SINGAPUR
+             * 81 - PEKING_HONGKONG
+             * 82 - PERTH
+             * 83 - TAIPEH
+             * 84 - ULAN_BATOR
+             * 85 - JAKUTSK
+             * 86 - OSAKA_TOKIO
+             * 87 - SEOUL
+             * 88 - ADELAIDE
+             * 89 - DARWIN
+             * 90 - BRISBANE
+             * 91 - CANBERRA_SYDNEY
+             * 92 - GUAM_PORT_MORESBY
+             * 93 - HOBART
+             * 94 - MAGADAN
+             * 95 - WLADIWOSTOK
+             * 96 - SALOMONEN_KALEDONIEN
+             * 97 - TSCHOKURDACH
+             * 98 - ANADYR
+             * 99 - AUCKLAND_WELLINGTON
+             * 100 - FIDSCHI
+             * 101 - COORD_WORLD_TIME_12
+             * 102 - NAKUALOFA
+             * 103 - SAMOA
+             * 104 - KIRITIMATI
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /TSCTCupdatetime:
+  get: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: 'Returns/sets the update time of the client.'
+   operationId: Get/TSCTCupdatetime
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            TSCTCupdatetime:
+             type: integer
+             format: uint32
+             minimum: 1
+             maximum: 3600
+             default: 600
+  post: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: |
+    Returns/sets the update time of the client.
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/TSCTCupdatetime
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          TSCTCupdatetime:
+           type: integer
+           format: uint32
+           minimum: 1
+           maximum: 3600
+           default: 600
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /LSPdatetime:
+  get: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: 'Returns the current time of the device (years, months, days, hours, minutes, seconds, microseconds).'
+   operationId: Get/LSPdatetime
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            LSPdatetime:
+             $ref: '#/components/schemas/DateTime_t'
+ /LSPsetdatetime:
+  post: 
+   tags: 
+   - 5 - Date and System Time
+   summary: ""
+   description: |
+    Sets the time of the device (years, months, days, hours, minutes, seconds, microseconds).
+
+     This function requires at least user level: Authorized Client.
+   operationId: Post/LSPsetdatetime
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          DateTime:
+           $ref: '#/components/schemas/DateTime_t'
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+          type: object
+          properties: 
+           ErrorCode:
+            type: integer
+            default: 0
+            enum: 
+            - 0
+            - 1
+            description: >
+             Mapping:
+              * 0 - SOPAS_ERR_NO_ERR
+              * 1 - SOPAS_ERR_STATE_CHANGE_NOT_PERMITTED
+components: 
+ schemas:
+  ResponseHeader:
+   type: object
+   properties: 
+    status:
+     type: integer
+     default: 0
+     enum: 
+     - 0
+     - 1
+     - 2
+     - 3
+     - 4
+     - 5
+     - 6
+     - 7
+     - 8
+     - 9
+     - 10
+     - 11
+     description: >
+      Mapping:
+       * 0 - Ok
+       * 1 - Parsing Failed
+       * 2 - Invalid Data
+       * 3 - Internal Server Error
+       * 4 - Access Denied
+       * 5 - Not Found
+       * 6 - Out Of Range
+       * 7 - Out Of Bounds
+       * 8 - Read Only
+       * 9 - Illegal Value
+       * 10 - Invalid Challenge
+       * 11 - Out Of Connections
+    message:
+     type: string
+     default: "Ok"
+  PostBodyHeader:
+   type: object
+   properties: 
+    nonce:
+     type: string
+     default: " "
+    opaque:
+     type: string
+     default: " "
+    realm:
+     type: string
+     default: "SICK Sensor"
+    response:
+     type: string
+     default: " "
+    user:
+     $ref: '#/components/schemas/E_USER_LEVEL_TYPE'
+  E_USER_LEVEL_TYPE:
+   type: string
+   default: Run
+   enum: 
+   - Run
+   - Operator
+   - Maintenance
+   - AuthorizedClient
+   - Service
+  DeviceStatus:
+   type: integer
+   default: 0
+   enum: 
+   - 0
+   - 1
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   description: >
+    Mapping:
+     * 0 - DS_UnknownState
+     * 1 - DS_Startup
+     * 2 - DS_ServiceMode
+     * 3 - DS_NormalOperation
+     * 4 - DS_SuspendedOperation
+     * 5 - DS_ServiceRecommended
+     * 6 - DS_ServiceRequired
+     * 7 - DS_RecoverableError
+     * 8 - DS_FatalError
+  DateTime_t:
+   type: object
+   properties: 
+    uiYear:
+     type: integer
+     format: uint16
+     minimum: 0
+     maximum: 2105
+     default: 0
+    usiMonth:
+     type: integer
+     format: uint8
+     minimum: 0
+     maximum: 12
+     default: 1
+    usiDay:
+     type: integer
+     format: uint8
+     minimum: 0
+     maximum: 31
+     default: 1
+    usiHour:
+     type: integer
+     format: uint8
+     minimum: 0
+     maximum: 23
+     default: 0
+    usiMinute:
+     type: integer
+     format: uint8
+     minimum: 0
+     maximum: 59
+     default: 0
+    usiSec:
+     type: integer
+     format: uint8
+     minimum: 0
+     maximum: 59
+     default: 0
+    udiUSec:
+     type: integer
+     format: uint32
+     minimum: 0
+     maximum: 999999
+     default: 0
+  httpsError_t:
+   type: object
+   properties: 
+    error:
+     type: string
+     default: " "
+     maxLength: 100
+  Logic_t:
+   type: integer
+   default: 0
+   enum: 
+   - 0
+   - 1
+   description: >
+    Mapping:
+     * 0 - ACTIVE_HIGH
+     * 1 - ACTIVE_LOW
+  IOState_t:
+   type: object
+   properties: 
+    eIOState:
+     type: integer
+     default: 2
+     enum: 
+     - 0
+     - 1
+     - 2
+     description: >
+      Mapping:
+       * 0 - IOS_LOW
+       * 1 - IOS_HIGH
+       * 2 - IOS_TRISTATE
+  PortStateAndCounter_t:
+   type: object
+   properties: 
+    ePortState:
+     type: integer
+     default: 2
+     enum: 
+     - 0
+     - 1
+     - 2
+     - 3
+     - 4
+     description: >
+      Mapping:
+       * 0 - OUTPUT_NOT_ACTIVE
+       * 1 - OUTPUT_ACTIVE
+       * 2 - TRISTATE
+       * 3 - INPUT_ACTIVE
+       * 4 - INPUT_NOT_ACTIVE
+    PortCounter:
+     type: integer
+     format: uint32
+  LedStateType:
+   type: object
+   properties: 
+    Color:
+     type: integer
+     default: 0
+     enum: 
+     - 0
+     - 1
+     - 2
+     - 3
+     description: >
+      Mapping:
+       * 0 - GREEN
+       * 1 - YELLOW
+       * 2 - RED
+       * 3 - WHITE
+    Function:
+     type: integer
+     default: 0
+     enum: 
+     - 0
+     - 1
+     - 2
+     - 3
+     - 4
+     - 5
+     - 6
+     description: >
+      Mapping:
+       * 0 - ON
+       * 1 - OFF
+       * 2 - BLINKING
+       * 3 - BLINKING_FAST
+       * 4 - BLINKING_DELAYED
+       * 5 - BLINKING_COLOR
+       * 6 - BLINKING_YELLOW_RED
+    Id:
+     type: string
+     default: " "
+     maxLength: 8

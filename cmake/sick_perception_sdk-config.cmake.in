@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+# Include the exported targets
+include("${CMAKE_CURRENT_LIST_DIR}/sick_perception_sdk-config-targets.cmake")
+
+# Include dependencies for each SDK component
+set(SICK_SENSOR_SDK_SUPPORTED_COMPONENTS common compact_format drivers sensor_configuration)
+foreach(component ${SICK_SENSOR_SDK_SUPPORTED_COMPONENTS})
+  if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${component}-dependencies.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/${component}-dependencies.cmake")
+  endif()
+endforeach()
+
+# Make sure all components required by the calling project are available.
+# Note that this check is run for the consumer project,
+# not necessarily the sick_perception_sdk project.
+check_required_components(${PROJECT_NAME})
