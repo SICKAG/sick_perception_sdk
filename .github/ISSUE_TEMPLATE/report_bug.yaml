@@ -1,0 +1,46 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in sick_perception_sdk
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the following details to help us investigate.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Device firmware version, OS, Toolchain, browser, etc.
+      placeholder: |
+        Device: e.g. picoScan150 incl. product number
+        Device firmware version: e.g. V2.2.0
+        Device serial number: 25121234
+        Compiler: e.g. GCC17
+        Browser: e.g. Chrome version 130
+        CPU: e.g. x64 architecture
+        OS: e.g. Ubuntu 22.04
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce the issue?
+      placeholder: |
+        1. use function
+        2. ..
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs or Screenshots
+      description: Add any error messages or screenshots that might help.
+      render: bash

@@ -1,0 +1,22 @@
+# Build and generated files
+build*
+CMakeUserPresets.json
+doc/doxy
+test_package/build
+3rd_party/
+*.zip
+install/
+install_sdk/
+*.pcd
+*.bmp
+.conan2
+
+# Python
+*venv/
+**/__pycache__
+.python-version
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json

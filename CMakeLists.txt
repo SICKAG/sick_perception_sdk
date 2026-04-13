@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/Version.txt" PROJECT_VERSION)
-string(STRIP "${PROJECT_VERSION}" PROJECT_VERSION)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/Version.txt" VERSION_FILE_CONTENT)
+string(REGEX MATCH "version=\"([^\"]+)\"" _ "${VERSION_FILE_CONTENT}")
+set(PROJECT_VERSION "${CMAKE_MATCH_1}")
+string(REGEX MATCH "preRelease=\"([^\"]+)\"" _ "${VERSION_FILE_CONTENT}")
+set(PRE_RELEASE_VERSION "${CMAKE_MATCH_1}")
 project(sick_perception_sdk VERSION ${PROJECT_VERSION} LANGUAGES CXX)
-set(PRE_RELEASE_VERSION "-c.1")
 
 #===============================================================================
 # User configuration for the SDK package.

@@ -75,7 +75,7 @@ cmake --install 3rd_party/nlohmann_json/build --prefix "$PWD/install"
 
 # Download, build and install cpp-httplib
 download_and_unpack "3rd_party/cpp-httplib" "cpp-httplib-v0.39.0.zip" "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.39.0.zip" "3rd_party/cpp-httplib-0.39.0"
-cmake -S 3rd_party/cpp-httplib -B 3rd_party/cpp-httplib/build
+cmake -S 3rd_party/cpp-httplib -B 3rd_party/cpp-httplib/build -DHTTPLIB_USE_ZSTD_IF_AVAILABLE=OFF
 cmake --install 3rd_party/cpp-httplib/build --prefix "$PWD/install"
 
 # Download, build and install Google Test

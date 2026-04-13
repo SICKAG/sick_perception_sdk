@@ -22,14 +22,14 @@ function Download-And-Unpack {
 		Write-Host "Downloading $TargetDir ..."
 		$maxAttempts = 2
 		$attempt = 1
-		
+
 		while ($attempt -le $maxAttempts) {
 			try {
 				if ($attempt -gt 1) {
 					Write-Host "Retrying download (attempt $attempt)..."
 					Start-Sleep -Seconds 3
 				}
-				
+
 				Invoke-WebRequest -Uri $Url -OutFile $ZipName
 				Expand-Archive -Path $ZipName -DestinationPath "3rd_party" -Force
 				Move-Item -Path $ExtractedDir -Destination $TargetDir
@@ -63,7 +63,7 @@ cmake --install 3rd_party/nlohmann_json/build --prefix "$PWD/install"
 
 # Download, build and install cpp-httplib
 Download-And-Unpack -TargetDir "3rd_party/cpp-httplib" -ZipName "cpp-httplib-v0.39.0.zip" -Url "https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.39.0.zip" -ExtractedDir "3rd_party/cpp-httplib-0.39.0"
-cmake -S 3rd_party/cpp-httplib -B 3rd_party/cpp-httplib/build
+cmake -S 3rd_party/cpp-httplib -B 3rd_party/cpp-httplib/build -DHTTPLIB_USE_ZSTD_IF_AVAILABLE=OFF
 cmake --install 3rd_party/cpp-httplib/build --prefix "$PWD/install"
 
 # Download, build and install Google Test

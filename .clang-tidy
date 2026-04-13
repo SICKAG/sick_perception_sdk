@@ -1,0 +1,64 @@
+# List of available checks:
+# https://releases.llvm.org/7.1.0/tools/clang/tools/extra/docs/clang-tidy/checks/list.html
+#
+HeaderFilterRegex: 'src/.*\.hpp$' # Requires clang-tidy 18 or later
+ExcludeHeaderFilterRegex: '.*\.g\.hpp$' # Requires clang-tidy 18 or later
+
+Checks: >
+  -*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  google-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-use-default-member-init,
+  -google-readability-namespace-comments,
+  -modernize-use-default-member-init,
+  -modernize-use-nodiscard,
+  -performance-enum-size,
+  -readability-function-cognitive-complexity,
+  -readability-math-missing-parentheses,
+  -readability-named-parameter,
+  -readability-redundant-member-init,
+  -readability-uppercase-literal-suffix,
+
+# Turn all the warnings from the checks above into errors.
+WarningsAsErrors: >
+  *,
+
+# See doc for available options:
+# https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html#cmdoption-arg-functioncase
+#
+CheckOptions:
+  - { key: readability-function-cognitive-complexity.Threshold, value: 30 }
+  - { key: readability-identifier-naming.ClassCase, value: CamelCase }
+  - { key: readability-identifier-naming.ClassMethodCase, value: camelBack }
+  - { key: readability-identifier-naming.EnumCase, value: CamelCase }
+  - { key: readability-identifier-naming.EnumConstantCase, value: CamelCase }
+  - { key: readability-identifier-naming.FunctionCase, value: camelBack }
+  - { key: readability-identifier-naming.GlobalFunctionCase, value: camelBack }
+  - { key: readability-identifier-naming.GlobalVariableCase, value: aNy_CasE }
+  - { key: readability-identifier-naming.LocalVariableCase, value: camelBack }
+  - { key: readability-identifier-naming.MemberCase, value: camelBack }
+  - { key: readability-identifier-naming.MethodCase, value: camelBack }
+  - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
+  - { key: readability-identifier-naming.ParameterCase, value: camelBack }
+  - { key: readability-identifier-naming.PrivateMemberPrefix, value: m_ }
+  - { key: readability-identifier-naming.ProtectedMemberPrefix, value: m_ }
+  - { key: readability-identifier-naming.StaticConstantCase, value: CamelCase }
+  - { key: readability-identifier-naming.StructCase, value: CamelCase }
+  - {
+      key: readability-identifier-naming.TemplateParameterCase,
+      value: CamelCase,
+    }
+  - {
+      key: readability-identifier-naming.TemplateTemplateParameterSuffix,
+      value: T,
+    }
+  - { key: readability-identifier-naming.VariableCase, value: camelBack }
+  - { key: misc-include-cleaner.IgnoreHeaders, value: ".*\\.g\\.hpp" }
+  - { key: readability-identifier-length.IgnoredVariableNames, value: "it" }

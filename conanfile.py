@@ -39,7 +39,12 @@ class SickPerceptionSDK(ConanFile):
     }
 
     def set_version(self):
-        self.version = load(self, "Version.txt").strip()
+        version_file = load(self, "Version.txt")
+        # Extract version from: version="1.0.1"
+        for line in version_file.split("\n"):
+            if line.startswith("version="):
+                self.version = line.split('"')[1]
+                break
 
     def configure(self):
         if self.options.get_safe("shared"):

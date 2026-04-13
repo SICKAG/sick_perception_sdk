@@ -1,0 +1,20 @@
+name: Question
+description: Ask a question about sick_perception_sdk
+title: "[Question] "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask your question below. We'll do our best to help!
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know about sick_perception_sdk?
+  - type: input
+    id: context
+    attributes:
+      label: Context
+      description: Any relevant details that might help us answer?
+      placeholder: e.g. version used, environment, etc.

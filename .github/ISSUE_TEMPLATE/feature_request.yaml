@@ -1,0 +1,24 @@
+name: Feature Request
+description: Suggest a new feature or improvement for sick_perception_sdk
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea? We'd love to hear it!
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: What should the feature do in sick_perception_sdk?
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this feature useful or important for sick_perception_sdk?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you tried other solutions or workarounds?

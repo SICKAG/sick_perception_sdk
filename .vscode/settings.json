@@ -1,0 +1,45 @@
+{
+  "cmake.configureOnEdit": false,
+  "cmake.configureOnOpen": false,
+  "black-formatter.args": [
+    "--line-length",
+    "200"
+  ],
+  "cSpell.words": [
+    "conanfile",
+    "configurator",
+    "cout",
+    "DBUILD",
+    "DCMAKE",
+    "googletest",
+    "Hostx",
+    "httplib",
+    "MSVC",
+    "MULTISCAN",
+    "nlohmann",
+    "plog",
+    "pthread",
+    "SOPAS",
+    "winsock"
+  ],
+  "C_Cpp.autoAddFileAssociations": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "[markdown]": {
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+  },
+  "markdownlint.config": {
+    "MD033": false,
+    "MD041": false,
+  },
+  "markdown.extension.toc.levels": "2..3"
+}
