@@ -1,5 +1,6 @@
 # cmake versions >= 3.5 are compatible with cmake 4, versions >= 3.10 are not deprecated.
 cmake_minimum_required(VERSION 3.22)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/default-build-type.cmake)
 project(sick_perception_sdk_picoScan100_examples)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

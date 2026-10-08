@@ -8,7 +8,9 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/IpV4Address.hpp>
 #include <sick_perception_sdk/common/version.hpp>
 
+#include <CLI/CLI.hpp>
 #include <cstdint>
+#include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <optional>
@@ -18,10 +20,10 @@ namespace sick::examples {
 
 inline void printSdkVersion()
 {
-  std::cout << "SDK Version: " << sick::version() << '\n';
+  std::cout << "This sick_perception_sdk version: " << sick::version() << '\n';
 }
 
-inline void printExceptionMessageWithPort(std::exception_ptr exception, std::optional<std::uint16_t> port)
+inline void printExceptionMessageWithPort(std::exception_ptr const& exception, std::optional<std::uint16_t> port)
 {
   try
   {
@@ -43,27 +45,44 @@ inline void printExceptionMessageWithPort(std::exception_ptr exception, std::opt
   }
 }
 
-inline void printExceptionMessage(std::exception_ptr exception)
+inline void printExceptionMessage(std::exception_ptr const& exception)
 {
   printExceptionMessageWithPort(exception, std::nullopt);
 }
 
-auto getDeviceAddress(int argc, char* argv[]) -> IpV4Address
+struct SensorAddress
 {
-  if (argc == 2)
-  {
-    return sick::IpV4Address(argv[1]);
-  }
-  return sick::IpV4Address("192.168.0.1");
-}
+  IpV4Address address;
+  std::uint16_t restApiPort;
+};
 
-auto getTwoDeviceAddresses(int argc, char* argv[]) -> std::pair<IpV4Address, IpV4Address>
+auto getSensorAddress(std::string exampleName, int argc, char* argv[], std::function<void(CLI::App&)> cli = [](CLI::App&) {}) -> SensorAddress
 {
-  if (argc == 3)
+  CLI::App app {exampleName};
+  argv = app.ensure_utf8(argv);
+
+  std::string sensorAddressStr {"192.168.0.1"};
+  std::uint16_t restApiPort = 80;
+  app
+    .add_option("-s,--sensor_address", sensorAddressStr, "IP address of the sensor.") //
+    ->default_val(sensorAddressStr)                                                   //
+    ->check(CLI::ValidIPV4);
+  app.add_option("--api_port", restApiPort, "Port of the sensor's REST API.")->default_val(restApiPort)->check(CLI::Range(1, 65535));
+
+  cli(app);
+
+  // Do not use CLI11_PARSE here: its macro body does `return app.exit(e)` (an int),
+  // which is incompatible with this function's IpV4Address return type. Exit instead.
+  try
   {
-    return {sick::IpV4Address(argv[1]), sick::IpV4Address(argv[2])};
+    app.parse(argc, argv);
   }
-  return {sick::IpV4Address("192.168.0.1"), sick::IpV4Address("192.168.0.2")};
+  catch (CLI::ParseError const& e)
+  {
+    std::exit(app.exit(e));
+  }
+
+  return SensorAddress {IpV4Address(sensorAddressStr), restApiPort};
 }
 
 } // namespace sick::examples

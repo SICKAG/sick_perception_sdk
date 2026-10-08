@@ -16,6 +16,9 @@ namespace sick::httplib_client {
 
 /**
  * @brief HTTPS client implementation using [httplib](https://github.com/yhirose/cpp-httplib).
+ * 
+ * @ingroup Http
+ * @ingroup sensor_configuration
  */
 class SDK_EXPORT HttpsClient final : public HttpClientBase<httplib::SSLClient>
 {

@@ -55,13 +55,17 @@ public:
   template <typename ValueT>
   void writeNextFieldValueOrIgnore(PointField::FieldType fieldType, ValueT value)
   {
+    if (m_numberOfFieldsWrittenInCurrentPoint >= m_fieldsAddedToPointCloud.size())
+    {
+      // If all configured fields for the current point were already written, we silently ignore any extra write attempts.
+      return;
+    }
+
     if (fieldType != m_fieldsAddedToPointCloud[m_numberOfFieldsWrittenInCurrentPoint])
     {
       // If the field is not the expected next field, we ignore it.
       return;
     }
-
-    assert(m_pointCloudDataWritePosition + sizeof(ValueT) <= m_pointCloud.m_data.size() && "Write exceeds allocated buffer");
 
     m_numberOfBytesWrittenInCurrentPoint += sizeof(ValueT);
     assert(m_numberOfBytesWrittenInCurrentPoint <= m_pointCloud.pointSizeBytes() && "Write exceeds point size");
@@ -74,15 +78,15 @@ public:
 protected:
   /**
    * @brief Protected ctor for use by derived builders.
-   * 
+   *
    * This ctor is called with two sets of field types (see `FieldConfig`):
-   * 
-   * 1. The desired set describes the fields that the caller of the builder wants to have in the point cloud. 
+   *
+   * 1. The desired set describes the fields that the caller of the builder wants to have in the point cloud.
    *    This is typically based on the fields that are expected by downstream processing or by the user.
    * 2. The available set describes the fields that are actually available in the input data and can be provided in the point cloud.
-   * 
+   *
    * The resulting point cloud will have the intersection of these two sets as its fields, in the order defined by the desired set.
-   * 
+   *
    * @see FieldConfig
    */
   explicit PointCloudBuilder(FieldConfig const& fieldConfig)
@@ -92,6 +96,7 @@ protected:
     // This ensures that the point cloud only contains fields that are both desired and available,
     // and that the fields are ordered according to the desired fields.
     auto const& [desiredFields, availableFields] = fieldConfig;
+    // AXIVION Next Construct CertC++-MEM30 CertC++-MEM50 : std::back_inserter handles vector reallocation safely, no stale pointers/iterators are stored.
     std::set_intersection(
       desiredFields.begin(),
       desiredFields.end(),
@@ -108,7 +113,7 @@ protected:
 
   /**
    * @brief Calls `addField` for each field with the correct field and data types and the field offset in bytes.
-   * 
+   *
    * @return The total size of one point in bytes.
    */
   auto addFields() -> std::uint32_t
@@ -122,6 +127,8 @@ protected:
     // index in m_fields.
     m_pointCloud.m_fieldIndexesForFieldType = std::vector<int>(static_cast<std::size_t>(PointField::FieldType::Last), -1);
 
+    // AXIVION Disable CertC++-MEM30: Only integer indices are stored, not pointers/iterators. Vector reallocation does not invalidate the stored indices.
+    // AXIVION Disable CertC++-MEM50: Only integer indices are stored, not pointers/iterators. Vector reallocation does not invalidate the stored indices.
     auto addField = [this](PointField::FieldType fieldType, PointField::DataType dataType, std::uint32_t fieldOffsetBytes) -> void {
       m_pointCloud.m_fields.emplace_back(PointField {fieldType, fieldOffsetBytes, dataType});
       m_pointCloud.m_fieldIndexesForFieldType[static_cast<std::size_t>(fieldType)] = static_cast<int>(m_pointCloud.m_fields.size() - 1);
@@ -136,16 +143,14 @@ protected:
       case FieldType::X:
       case FieldType::Y:
       case FieldType::Z:
-        addField(field, DataType::Float32, currentOffset);
-        currentOffset += sizeof(float);
-        break;
+        //
       case FieldType::Range:
       case FieldType::Azimuth:
       case FieldType::Elevation:
-        addField(field, DataType::Float32, currentOffset);
-        currentOffset += sizeof(float);
-        break;
+        //
       case FieldType::Intensity:
+        //
+      case FieldType::PulseWidth:
         addField(field, DataType::Float32, currentOffset);
         currentOffset += sizeof(float);
         break;
@@ -155,21 +160,22 @@ protected:
         currentOffset += sizeof(std::uint32_t);
         break;
       case FieldType::Ring:
-      case FieldType::LayerId:
+      case FieldType::LayerIndex:
       case FieldType::EchoIndex:
-      case FieldType::IsReflector:
-      case FieldType::HasBlooming:
         addField(field, DataType::Uint8, currentOffset);
         currentOffset += sizeof(std::uint8_t);
         break;
-      case FieldType::PulseWidth:
-        addField(field, DataType::Float32, currentOffset);
-        currentOffset += sizeof(float);
+      case FieldType::Properties:
+      case FieldType::ColumnIndex:
+        addField(field, DataType::Uint16, currentOffset);
+        currentOffset += sizeof(std::uint16_t);
         break;
       default:
-        throw std::runtime_error("Unsupported field type");
+        throw std::runtime_error("Unsupported field type: " + PointField::fieldTypeToString(field));
       }
     }
+    // AXIVION Enable CertC++-MEM30
+    // AXIVION Enable CertC++-MEM50
 
     return currentOffset;
   }

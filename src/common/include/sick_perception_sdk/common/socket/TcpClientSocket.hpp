@@ -10,6 +10,7 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/socket/ReceiveError.hpp>
 #include <sick_perception_sdk/common/socket/Socket.hpp>
 
+#include <cstdint>
 #include <string>
 
 namespace sick {
@@ -22,7 +23,7 @@ public:
   //! \param serverAddress The IP address of the server to connect to.
   //! \param serverPort The port on the server to which to open the socket.
   TcpClientSocket(IpV4Address serverAddress, std::uint16_t serverPort);
-  virtual ~TcpClientSocket();
+  ~TcpClientSocket() override;
 
   TcpClientSocket(TcpClientSocket const&)                    = delete;
   auto operator=(TcpClientSocket const&) -> TcpClientSocket& = delete;

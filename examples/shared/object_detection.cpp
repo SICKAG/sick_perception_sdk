@@ -10,34 +10,32 @@ SPDX-License-Identifier: MIT
 
 #if defined(USE_MULTISCAN100)
 #  include <sick_perception_sdk/drivers/multiScan100/MultiScan100Driver.hpp>
-#  include <sick_perception_sdk/sensor_configuration/api/multiScan100/2_4_2_0R/GetFieldEvaluationContour.g.hpp>
-#  include <sick_perception_sdk/sensor_configuration/api/multiScan100/2_4_2_0R/SetFieldEvaluationContour.g.hpp>
+#  include <sick_perception_sdk/sensor_configuration/api/multiScan100/2_4_4/GetFieldEvaluationContour.g.hpp>
+#  include <sick_perception_sdk/sensor_configuration/api/multiScan100/2_4_4/SetFieldEvaluationContour.g.hpp>
 #  include <sick_perception_sdk/sensor_configuration/multiScan100/MultiScan100Configurator.hpp>
-using ConfiguratorT         = sick::multiScan100::v2_4_2_0R::Configurator;
-using SetContourRequest     = sick::multiScan100::v2_4_2_0R::api::rest::SetFieldEvaluationContour::Post::Request;
-using GetContourRequest     = sick::multiScan100::v2_4_2_0R::api::rest::GetFieldEvaluationContour::Post::Response;
-using FieldEvaluationResult = sick::multiScan100::v2_4_2_0R::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult;
-using EvaluationState = sick::multiScan100::v2_4_2_0R::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
+using ConfiguratorT         = sick::multiScan100::v2_4_4::Configurator;
+using SetContourRequest     = sick::multiScan100::v2_4_4::api::rest::SetFieldEvaluationContour::Post::Request;
+using GetContourRequest     = sick::multiScan100::v2_4_4::api::rest::GetFieldEvaluationContour::Post::Response;
+using FieldEvaluationResult = sick::multiScan100::v2_4_4::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult;
+using EvaluationState = sick::multiScan100::v2_4_4::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
 #elif defined(USE_LRS4000)
 #  include <sick_perception_sdk/drivers/LRS4000/LRS4000Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/LRS4000/LRS4000Configurator.hpp>
-#  include <sick_perception_sdk/sensor_configuration/api/LRS4000/1_9_1_0R/GetFieldEvaluationContour.g.hpp>
-#  include <sick_perception_sdk/sensor_configuration/api/LRS4000/1_9_1_0R/SetFieldEvaluationContour.g.hpp>
-using ConfiguratorT         = sick::LRS4000::v1_9_1_0R::Configurator;
-using SetContourRequest     = sick::LRS4000::v1_9_1_0R::api::rest::SetFieldEvaluationContour::Post::Request;
-using GetContourRequest     = sick::LRS4000::v1_9_1_0R::api::rest::GetFieldEvaluationContour::Post::Response;
-using FieldEvaluationResult = sick::LRS4000::v1_9_1_0R::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult;
-using EvaluationState       = sick::LRS4000::v1_9_1_0R::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
+#  include <sick_perception_sdk/sensor_configuration/api/LRS4000/1_10_0/GetFieldEvaluationContour.g.hpp>
+#  include <sick_perception_sdk/sensor_configuration/api/LRS4000/1_10_0/SetFieldEvaluationContour.g.hpp>
+using ConfiguratorT         = sick::LRS4000::v1_10_0::Configurator;
+using SetContourRequest     = sick::LRS4000::v1_10_0::api::rest::SetFieldEvaluationContour::Post::Request;
+using GetContourRequest     = sick::LRS4000::v1_10_0::api::rest::GetFieldEvaluationContour::Post::Response;
+using FieldEvaluationResult = sick::LRS4000::v1_10_0::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult;
+using EvaluationState = sick::LRS4000::v1_10_0::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
 #else // Default to picoScan150
 #  include <sick_perception_sdk/drivers/picoScan100/PicoScan100Driver.hpp>
-#  include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan150/2_2_1_0R/GetFieldEvaluationContour.g.hpp>
-#  include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan150/2_2_1_0R/SetFieldEvaluationContour.g.hpp>
 #  include <sick_perception_sdk/sensor_configuration/picoScan150/PicoScan150Configurator.hpp>
-using ConfiguratorT         = sick::picoScan150::v2_2_1_0R::Configurator;
-using SetContourRequest     = sick::picoScan150::v2_2_1_0R::api::rest::SetFieldEvaluationContour::Post::Request;
-using GetContourRequest     = sick::picoScan150::v2_2_1_0R::api::rest::GetFieldEvaluationContour::Post::Response;
-using FieldEvaluationResult = sick::picoScan150::v2_2_1_0R::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult;
-using EvaluationState = sick::picoScan150::v2_2_1_0R::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
+using ConfiguratorT         = sick::picoScan150::v2_3_3::Configurator;
+using SetContourRequest     = sick::picoScan150::v2_3_3::api::rest::SetFieldEvaluationContour::Post::Request;
+using GetContourRequest     = sick::picoScan150::v2_3_3::api::rest::GetFieldEvaluationContour::Post::Response;
+using FieldEvaluationResult = sick::picoScan150::v2_3_3::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult;
+using EvaluationState = sick::picoScan150::v2_3_3::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
 #endif
 
 #include <array>
@@ -51,25 +49,24 @@ using EvaluationState = sick::picoScan150::v2_2_1_0R::api::rest::FieldEvaluation
 constexpr int GroupActivationStateInactive = 0;
 constexpr int NumberOfEvaluationGroups     = 48;
 
-void printFieldEvaluationContours(std::vector<sick::FieldEvaluationContour> const& fieldContours)
+void printFieldEvaluationContours(std::vector<GetContourRequest::Response::ContourItem> const& fieldContours)
 {
   for (auto const& contour : fieldContours)
   {
-    std::cout << "Contour for Evaluation ID " << contour.evaluationId << '\n';
     std::cout << "Points: \n";
-    for (auto const& point : contour.points)
+    for (auto const& point : contour._Points)
     {
-      std::cout << "- [" << point.x << ", " << point.y << "]\n";
+      std::cout << "- [" << point._x << ", " << point._y << "]\n";
     }
-    std::cout << "Lower z limit: " << contour.lowerZLimit << '\n';
-    std::cout << "Upper z limit: " << contour.upperZLimit << '\n';
+    std::cout << "Lower z limit: " << contour._LowerZLimit.value() << '\n';
+    std::cout << "Upper z limit: " << contour._UpperZLimit.value() << '\n';
   }
 }
 
-void printEvaluationGroupStates(ConfiguratorT& configurator)
+void printEvaluationGroupStates(ConfiguratorT const& configurator)
 {
   std::cout << "Getting group states from device.\n";
-  std::array<int, NumberOfEvaluationGroups> groupStates = configurator.fieldEvaluationGroupState.get();
+  auto const groupStates = configurator.getFieldEvaluationGroupState();
   for (size_t i = 0; i < groupStates.size(); ++i)
   {
     if (groupStates[i] != GroupActivationStateInactive) //only show active Fields
@@ -79,22 +76,24 @@ void printEvaluationGroupStates(ConfiguratorT& configurator)
   }
 }
 
-void printEvaluationFieldsStates(std::vector<int>& evaluationIDs, ConfiguratorT& configurator)
+auto getAndPrintEvaluationFieldsStates(ConfiguratorT const& configurator) -> std::vector<std::uint16_t>
 {
   std::cout << "Getting states of fields.\n";
-  FieldEvaluationResult result = configurator.fieldEvaluationResult.get();
+  auto const result = configurator.getFieldEvaluationResult();
   std::cout << "Timestamp: " << result._Timestamp << '\n';
+  std::vector<std::uint16_t> evaluationIDs;
   for (size_t i = 0; i < result._EvaluationResultList.size(); i++)
   {
     if (result._EvaluationResultList.at(i)._State != EvaluationState::NotConfigured)
     {
       std::cout << "ID: " << i + 1 << " State: " << static_cast<int>(result._EvaluationResultList.at(i)._State) << '\n';
-      evaluationIDs.push_back(static_cast<int>(i + 1));
+      evaluationIDs.push_back(static_cast<std::uint16_t>(i + 1));
     }
   }
+  return evaluationIDs;
 }
 
-void scaleEvaluationContours(std::vector<int>& evaluationIDs, ConfiguratorT& configurator)
+void scaleEvaluationContours(std::vector<std::uint16_t> const& evaluationIDs, ConfiguratorT const& configurator)
 {
   if (evaluationIDs.size() == 0)
   {
@@ -106,21 +105,22 @@ void scaleEvaluationContours(std::vector<int>& evaluationIDs, ConfiguratorT& con
 
   for (auto const& evaluationID : evaluationIDs)
   {
-    auto fieldContours = configurator.fieldEvaluationContour.get(evaluationID);
+    auto const fieldContours = configurator.getFieldEvaluationContour(evaluationID);
+    std::cout << "Contours for evaluation ID " << evaluationID << ":\n";
     printFieldEvaluationContours(fieldContours);
 
     // Change field contour points
     for (auto& contour : fieldContours)
     {
-      std::cout << "Changing contour for field/evaluation Id: " << contour.evaluationId << '\n';
+      std::cout << "Changing contour for evaluation ID " << evaluationID << ":\n";
 
-      for (auto& point : contour.points)
+      SetContourRequest request {evaluationID, {}, contour._LowerZLimit, contour._UpperZLimit};
+      for (auto& point : contour._Points)
       {
-        point.x = point.x / 2;
-        point.y = point.y / 2;
+        request._Points.push_back(SetContourRequest::PointsItem {point._x / 2, point._y / 2});
       }
 
-      configurator.fieldEvaluationContour.set(contour.evaluationId, contour);
+      configurator.setFieldEvaluationContour(request);
     }
   }
 }
@@ -132,9 +132,10 @@ void scaleEvaluationContours(std::vector<int>& evaluationIDs, ConfiguratorT& con
 int main(int argc, char* argv[])
 {
   sick::examples::printSdkVersion();
-  auto const deviceAddress = sick::examples::getDeviceAddress(argc, argv);
 
-  auto const httpClient = std::make_shared<sick::httplib_client::HttpClient>(deviceAddress, 80);
+  auto const sensorAddress = sick::examples::getSensorAddress("Object detection example", argc, argv);
+
+  auto const httpClient = std::make_shared<sick::httplib_client::HttpClient>(sensorAddress.address, sensorAddress.restApiPort);
 
   // Change the default passwords during initial commissioning to secure your device.
   // Passwords can be updated via the web browser or API.
@@ -143,10 +144,8 @@ int main(int argc, char* argv[])
 
   try
   {
-    std::vector<int> evaluationIDs;
-
     printEvaluationGroupStates(configurator);
-    printEvaluationFieldsStates(evaluationIDs, configurator);
+    auto const evaluationIDs = getAndPrintEvaluationFieldsStates(configurator);
     scaleEvaluationContours(evaluationIDs, configurator);
   }
   catch (std::exception const& exception)

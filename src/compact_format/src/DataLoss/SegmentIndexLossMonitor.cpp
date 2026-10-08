@@ -5,13 +5,14 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/compact_format/DataLoss/SegmentIndexLossMonitor.hpp>
 
-#include <cstdint>
+#include <cstddef>
 #include <optional>
 #include <stdexcept>
+#include <string>
 
 namespace sick::compact {
 
-SegmentIndexLossMonitor::SegmentIndexLossMonitor(std::uint64_t expectedNumberOfSegmentsPerFrame)
+SegmentIndexLossMonitor::SegmentIndexLossMonitor(std::size_t expectedNumberOfSegmentsPerFrame)
   : m_expectedNumberOfSegmentsPerFrame(expectedNumberOfSegmentsPerFrame)
   , m_lastLinearSegmentIndex(std::nullopt)
 {
@@ -21,11 +22,14 @@ SegmentIndexLossMonitor::SegmentIndexLossMonitor(std::uint64_t expectedNumberOfS
   }
 }
 
-auto SegmentIndexLossMonitor::computeNumberOfMissingElements(std::uint64_t frameSequenceNumber, std::uint64_t segmentIndex) -> int
+auto SegmentIndexLossMonitor::computeNumberOfMissingElements(std::size_t frameSequenceNumber, std::size_t segmentIndex) -> int
 {
   if (segmentIndex >= m_expectedNumberOfSegmentsPerFrame)
   {
-    throw std::invalid_argument("segmentIndex must be smaller than expectedNumberOfSegmentsPerFrame");
+    throw std::invalid_argument(
+      "segmentIndex (" + std::to_string(segmentIndex) + ") must be smaller than expectedNumberOfSegmentsPerFrame (" +
+      std::to_string(m_expectedNumberOfSegmentsPerFrame) + ")"
+    );
   }
 
   if (!m_lastLinearSegmentIndex.has_value())

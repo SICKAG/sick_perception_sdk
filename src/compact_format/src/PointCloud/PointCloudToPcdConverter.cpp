@@ -5,6 +5,7 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/compact_format/PointCloud/PointCloudToPcdConverter.hpp>
 
+#include <sick_perception_sdk/compact_format/PointCloud/PointCloudAttributes.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/UnorganizedPointCloud.hpp>
 
 #include <cstdint>
@@ -12,8 +13,10 @@ SPDX-License-Identifier: MIT
 #include <fstream>
 #include <iomanip>
 #include <ios>
+#include <iostream>
 #include <ostream>
 #include <stdexcept>
+#include <string>
 
 namespace sick::pcd {
 
@@ -46,14 +49,14 @@ auto toPcdFieldName(FieldType type) -> char const*
     return "ts";
   case FieldType::Ring:
     return "ring";
-  case FieldType::LayerId:
+  case FieldType::LayerIndex:
     return "layer";
   case FieldType::EchoIndex:
     return "echo";
-  case FieldType::IsReflector:
-    return "isReflector";
-  case FieldType::HasBlooming:
-    return "hasBlooming";
+  case FieldType::ColumnIndex:
+    return "column";
+  case FieldType::Properties:
+    return "properties";
   case FieldType::PulseWidth:
     return "pulseWidth";
   default:
@@ -94,7 +97,7 @@ auto getPcdFieldInfo(DataType type) -> PcdFieldInfo
   case DataType::Float64:
     return {'F', sizeof(double)};
   default:
-    throw std::runtime_error("Unsupported PointField datatype");
+    throw std::runtime_error("Unsupported PointField datatype: " + point_cloud::PointField::dataTypeToString(type));
   }
 }
 
@@ -119,7 +122,7 @@ void writePcdHeader(std::ostream& stream, point_cloud::UnorganizedPointCloud con
     stream << " " << getPcdFieldInfo(field.dataType).type;
   }
   stream << "\nCOUNT";
-  for (auto const& field : cloud.fields())
+  for (std::size_t fieldIndex = 0; fieldIndex < cloud.fields().size(); ++fieldIndex)
   {
     stream << " 1";
   }
@@ -136,9 +139,8 @@ void writePointAscii(point_cloud::UnorganizedPointCloud const& cloud, std::size_
 
   for (std::size_t fieldIndex = 0; fieldIndex < cloud.fields().size(); ++fieldIndex)
   {
-    auto const& field = cloud.fields()[fieldIndex];
-
-    switch (field.fieldType)
+    auto const fieldType = cloud.fields()[fieldIndex].fieldType;
+    switch (fieldType)
     {
     case FieldType::X:
       stream << std::fixed << std::setprecision(kFloatPrecision) << cloud.getX(pointIndex);
@@ -170,23 +172,23 @@ void writePointAscii(point_cloud::UnorganizedPointCloud const& cloud, std::size_
     case FieldType::Ring:
       stream << static_cast<unsigned int>(cloud.getRing(pointIndex));
       break;
-    case FieldType::LayerId:
-      stream << static_cast<unsigned int>(cloud.getLayer(pointIndex));
+    case FieldType::LayerIndex:
+      stream << static_cast<unsigned int>(cloud.getLayerIndex(pointIndex));
       break;
     case FieldType::EchoIndex:
-      stream << static_cast<unsigned int>(cloud.getEcho(pointIndex));
+      stream << static_cast<unsigned int>(cloud.getEchoIndex(pointIndex));
       break;
-    case FieldType::IsReflector:
-      stream << (cloud.isReflector(pointIndex) ? "1" : "0");
+    case FieldType::ColumnIndex:
+      stream << static_cast<unsigned int>(cloud.getColumnIndex(pointIndex));
       break;
-    case FieldType::HasBlooming:
-      stream << (cloud.hasBlooming(pointIndex) ? "1" : "0");
+    case FieldType::Properties:
+      stream << static_cast<unsigned int>(cloud.getProperties(pointIndex).underlyingValue());
       break;
     case FieldType::PulseWidth:
       stream << std::fixed << std::setprecision(kFloatPrecision) << cloud.getPulseWidth(pointIndex);
       break;
     default:
-      throw std::runtime_error("Unsupported PointField type");
+      throw std::runtime_error("Unsupported PointField type: " + point_cloud::PointField::fieldTypeToString(fieldType));
     }
 
     if (fieldIndex + 1 < cloud.fields().size())
@@ -209,7 +211,7 @@ void convertToBinary(point_cloud::UnorganizedPointCloud const& pointCloud, std::
 void convertToAscii(point_cloud::UnorganizedPointCloud const& pointCloud, std::ostream& outputStream)
 {
   writePcdHeader(outputStream, pointCloud, false);
-  for (auto pointIndex = 0; pointIndex < pointCloud.numberOfPoints(); ++pointIndex)
+  for (std::size_t pointIndex = 0; pointIndex < pointCloud.numberOfPoints(); ++pointIndex)
   {
     writePointAscii(pointCloud, pointIndex, outputStream);
   }

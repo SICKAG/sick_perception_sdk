@@ -29,11 +29,10 @@ class SDK_EXPORT UdpScanDataReceiver : public compact::UdpStreamReceiver<scan_da
   using BaseT = compact::UdpStreamReceiver<scan_data::Parser, UdpScanDataReceiver>;
 
 public:
-  // Fixme: Rename to UdpScanDataReceiver
   explicit UdpScanDataReceiver(typename BaseT::ErrorCallback onError, std::string loggerName);
 
   static constexpr std::uint16_t kDefaultPort = 2115;
-  using DataLossCallback                      = std::function<void(compact::scan_data::DataLossMonitor::LossCounts const&)>;
+  using DataLossCallback                      = std::function<void(compact::LossCounts const&)>;
   using UnorganizedPointCloudCallback         = std::function<void(point_cloud::UnorganizedPointCloud const&)>;
   using ScanDataCallback                      = std::function<void(compact::scan_data::ScanData const&)>;
 

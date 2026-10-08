@@ -63,7 +63,7 @@ void ensureInstanceIsAvailable()
 
 } // namespace
 
-auto Log::init(LogLevel minimumLogLevel) -> void
+void Log::init(LogLevel minimumLogLevel)
 {
   if (g_impl != nullptr)
   {

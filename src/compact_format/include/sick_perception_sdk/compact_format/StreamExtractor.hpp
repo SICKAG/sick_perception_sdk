@@ -16,7 +16,18 @@ namespace sick::compact {
 class SDK_EXPORT StreamExtractor
 {
 public:
-  StreamExtractor();
+  /**
+   * @brief Upper bound on a single Compact telegram.
+   * 
+   * A telegram or module size above this, or buffering this many bytes from a start-of-frame 
+   * without being able to determine a size, is treated as a false start-of-frame and triggers a
+   * resync. 
+   *
+   * Raise it via the constructor if a device emits larger telegrams.
+   */
+  static constexpr std::size_t kDefaultMaxTelegramSizeInBytes = 100'000'000;
+
+  explicit StreamExtractor(std::size_t maxTelegramSizeInBytes = kDefaultMaxTelegramSizeInBytes);
 
   /**
    * @brief Extract all complete Compact telegrams from a stream of bytes.
@@ -33,23 +44,21 @@ public:
 private:
   enum class State
   {
-    WaitingForStx          = 1,
-    WaitingForTelegramType = 2,
-    WaitingForChecksum     = 3
+    WaitingForStx      = 1,
+    WaitingForChecksum = 2,
   };
 
   std::vector<std::uint8_t> m_buffer;
   State m_state;
   std::size_t m_stxPositionInBuffer;
   std::unique_ptr<CompactParser> m_parser;
+  std::size_t m_maxTelegramSizeInBytes;
 
   auto getBufferFromStx() const -> ByteView;
 
   void discardStx();
 
   void findStx();
-
-  void readTelegramType();
 
   auto extractPacket() -> std::optional<std::vector<std::uint8_t>>;
 };

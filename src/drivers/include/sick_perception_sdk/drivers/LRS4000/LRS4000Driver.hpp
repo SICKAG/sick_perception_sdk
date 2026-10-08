@@ -37,10 +37,10 @@ public:
     using BaseT = compact::TcpStreamReceiver<compact::scan_data::Parser>;
 
   public:
-    explicit ScanDataReceiver(IpV4Address deviceAddress, BaseT::ErrorCallback onError, std::string loggerName);
+    explicit ScanDataReceiver(IpV4Address sensorAddress, BaseT::ErrorCallback onError, std::string loggerName);
 
     static constexpr std::uint16_t kDefaultPort = 2115;
-    using DataLossCallback                      = std::function<void(compact::scan_data::DataLossMonitor::LossCounts const&)>;
+    using DataLossCallback                      = std::function<void(compact::LossCounts const&)>;
     using UnorganizedPointCloudCallback         = std::function<void(point_cloud::UnorganizedPointCloud const&)>;
     using ScanDataCallback                      = std::function<void(compact::scan_data::ScanData const&)>;
 
@@ -59,7 +59,7 @@ public:
     ) -> ScanDataReceiver&;
 
   private:
-    IpV4Address m_deviceAddress;
+    IpV4Address m_sensorAddress;
 
     std::optional<std::pair<compact::scan_data::DataLossMonitor, DataLossCallback>> m_dataLoss;
     std::optional<ScanDataCallback> m_onNewData;
@@ -69,10 +69,10 @@ public:
   };
 
   /**
-   * @param deviceAddress The IP address of the LRS4000 device to connect to
+   * @param sensorAddress The IP address of the LRS4000 device to connect to
    * @param onError Callback function that is called when an unhandled exception is thrown
    */
-  explicit Driver(IpV4Address deviceAddress, std::function<void(std::exception_ptr)> const& onError = [](std::exception_ptr) -> void {});
+  explicit Driver(IpV4Address sensorAddress, std::function<void(std::exception_ptr const&)> const& onError = [](auto) -> void { });
 
   Driver(Driver const&)                    = delete;
   auto operator=(Driver const&) -> Driver& = delete;

@@ -52,12 +52,13 @@ auto SDK_EXPORT operator<<(std::ostream& stream, Temperature const& temperature)
 
 namespace literals {
 
-constexpr auto operator"" _degC(long double value) -> Temperature
+// NOLINTNEXTLINE(google-runtime-float): user-defined literals require a long double parameter
+constexpr auto operator""_degC(long double value) -> Temperature
 {
   return Temperature::fromDegreesCelsius(static_cast<Temperature::value_type>(value));
 }
 
-constexpr auto operator"" _degC(unsigned long long value) -> Temperature
+constexpr auto operator""_degC(unsigned long long value) -> Temperature
 {
   return Temperature::fromDegreesCelsius(static_cast<Temperature::value_type>(value));
 }
@@ -65,12 +66,5 @@ constexpr auto operator"" _degC(unsigned long long value) -> Temperature
 } // namespace literals
 
 } // namespace sick
-
-namespace std {
-
-// NOLINTNEXTLINE(readability-identifier-naming): to_string is standard library style
-auto SDK_EXPORT to_string(sick::Temperature const& temperature) -> std::string;
-
-} // namespace std
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)

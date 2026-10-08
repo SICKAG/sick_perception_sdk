@@ -22,7 +22,7 @@ public:
   //! \brief Create a listening socket at the given port.
   //! \param port The port on which to open the socket.
   explicit UdpListeningSocket(std::uint16_t port);
-  virtual ~UdpListeningSocket();
+  ~UdpListeningSocket() override;
 
   UdpListeningSocket(UdpListeningSocket const&)                    = delete;
   auto operator=(UdpListeningSocket const&) -> UdpListeningSocket& = delete;

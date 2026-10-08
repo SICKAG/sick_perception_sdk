@@ -7,6 +7,7 @@ SPDX-License-Identifier: MIT
 
 #include "ResponseHeader.hpp"
 
+#include <cstdint>
 #include <stdint.h>
 #include <string>
 #include <vector>

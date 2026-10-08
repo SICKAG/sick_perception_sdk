@@ -3,13 +3,20 @@ cmake_minimum_required(VERSION 3.24)
 set(BENCHMARK_NAME compact_format_benchmark)
 
 set(BENCHMARK_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloud/UnorganizedPointCloud.benchmark.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_1_scan_data/telegram_type_1_ScanDataParser.benchmark.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_6_multiScan200/telegram_type_6_MultiScan200Parser.benchmark.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_6_multiScan200/telegram_type_6_MultiScan200PointCloudConverter.benchmark.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ScanDataParser.benchmark.cpp
 )
 set(BENCHMARK_RESOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/LRS4581_scan-frame_0.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/multiScan136_scan-frame_0.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/picoScan150_profile1_scan-frame_0.bin
+  # Telegram type 1
+  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/telegram_type_1_LRS4581-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/telegram_type_1_multiScan136-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/telegram_type_1_picoScan150_profile_1-frame_0.bin
+  # Telegram type 6
+  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/telegram_type_6_multiScan270_profile_12_full-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/../test/data/telegram_type_6_multiScan270_profile_12_minimal-frame_0.bin
 )
 
 add_executable(${BENCHMARK_NAME})

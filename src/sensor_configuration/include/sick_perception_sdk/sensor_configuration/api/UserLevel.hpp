@@ -28,10 +28,20 @@ enum class UserLevel
 };
 #undef __ENUMERATE_USER_LEVEL
 
-static std::unordered_map<UserLevel, std::string> const UserLevelToStringMap = {
-#define __ENUMERATE_USER_LEVEL(name, value) {UserLevel::name, #name},
-  ENUMERATE_USER_LEVEL
+#define __ENUMERATE_USER_LEVEL(name, value)                                                                                                                    \
+  case UserLevel::name:                                                                                                                                        \
+    return #name;
+
+inline auto toString(UserLevel userLevel) -> std::string
+{
+  switch (userLevel)
+  {
+    ENUMERATE_USER_LEVEL
+  default:
+    return "Unknown";
+  }
+}
+
 #undef __ENUMERATE_USER_LEVEL
-};
 
 } // namespace sick

@@ -59,17 +59,22 @@ static int const SOCKET_ERROR = -1;
 #include <chrono>
 #include <limits>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace sick {
+
 class SDK_EXPORT Socket
 {
 public:
-  Socket()
+  explicit Socket(std::string idString)
     : m_socket(INVALID_SOCKET)
+    , m_idString(std::move(idString))
   {
     initWinsock();
   }
+
+  virtual ~Socket() = default;
 
   static auto errorCodeIsTimeoutError(int errorCode) -> bool
   {
@@ -126,11 +131,16 @@ public:
 
   void closeConnection(void)
   {
+    if (m_socket == INVALID_SOCKET)
+    {
+      return;
+    }
 #ifdef _WIN32
     closesocket(m_socket);
 #else
     close(m_socket);
 #endif
+    m_socket = INVALID_SOCKET;
   }
 
   int getErrorCode()
@@ -144,18 +154,7 @@ public:
 
 protected:
   SOCKET m_socket;
-
-  void initWinsock(void)
-  {
-#ifdef _WIN32
-    WSADATA wsaData;
-    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (iResult != 0)
-    {
-      throw std::runtime_error("Failed to initialize winsock.");
-    }
-#endif
-  }
+  std::string m_idString;
 
   void cleanup(void)
   {
@@ -172,7 +171,21 @@ protected:
     inet_pton(AF_INET, host, &(saddr_in.sin_addr));
 #endif
   }
+
+private:
+  void initWinsock(void)
+  {
+#ifdef _WIN32
+    WSADATA wsaData;
+    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iResult != 0)
+    {
+      throw std::runtime_error("Failed to initialize winsock.");
+    }
+#endif
+  }
 };
+
 } // namespace sick
 
 // NOLINTEND

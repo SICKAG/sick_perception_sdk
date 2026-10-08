@@ -1,5 +1,6 @@
 # cmake versions >= 3.5 are compatible with cmake 4, versions >= 3.10 are not deprecated.
 cmake_minimum_required(VERSION 3.22)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/default-build-type.cmake)
 project(sick_perception_sdk_shared_examples)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -21,23 +22,31 @@ endif()
 add_example(
   FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
   TARGET change_ip_address
-  DEPENDENCIES sick_perception_sdk::drivers sick_perception_sdk::sensor_configuration
+  DEPENDENCIES sick_perception_sdk::sensor_configuration
 )
 
 add_example(
   FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
   TARGET configuration
-  DEPENDENCIES sick_perception_sdk::drivers sick_perception_sdk::sensor_configuration
+  DEPENDENCIES sick_perception_sdk::sensor_configuration
 )
+
+if (NOT USE_LRS4000)
+  add_example(
+    FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
+    TARGET firmware_update
+    DEPENDENCIES sick_perception_sdk::sensor_configuration
+  )
+endif()
 
 add_example(
   FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
   TARGET print_version
-  DEPENDENCIES sick_perception_sdk::drivers sick_perception_sdk::sensor_configuration
+  DEPENDENCIES sick_perception_sdk::common
 )
 
-# TCP streaming examples (LRS4000 only)
-if(USE_LRS4000)
+# TCP streaming examples (LRS4000 and multiScan200 only)
+if(USE_LRS4000 OR USE_MULTISCAN200)
   add_example(
     FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
     TARGET data_streaming_tcp
@@ -47,7 +56,7 @@ if(USE_LRS4000)
   add_example(
     FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
     TARGET low_level_streaming_tcp
-    DEPENDENCIES sick_perception_sdk::drivers
+    DEPENDENCIES sick_perception_sdk::compact_format
   )
 endif()
 
@@ -61,20 +70,26 @@ if(USE_PICOSCAN100 OR USE_MULTISCAN100)
 
   add_example(
     FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
-    TARGET multiple_devices
+    TARGET data_streaming_udp_multicast
     DEPENDENCIES sick_perception_sdk::drivers sick_perception_sdk::sensor_configuration
   )
 
   add_example(
     FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
-    TARGET segmented_data
+    TARGET data_streaming_udp_multiple_devices
+    DEPENDENCIES sick_perception_sdk::drivers sick_perception_sdk::sensor_configuration
+  )
+
+  add_example(
+    FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
+    TARGET data_streaming_udp_segmented_data
     DEPENDENCIES sick_perception_sdk::drivers sick_perception_sdk::sensor_configuration
   )
 
   add_example(
     FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
     TARGET low_level_streaming_udp
-    DEPENDENCIES sick_perception_sdk::drivers
+    DEPENDENCIES sick_perception_sdk::compact_format
   )
 
   add_example(
@@ -84,14 +99,8 @@ if(USE_PICOSCAN100 OR USE_MULTISCAN100)
 )
 endif()
 
-add_example(
-  FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
-  TARGET data_streaming_roi
-  DEPENDENCIES sick_perception_sdk::drivers sick_perception_sdk::sensor_configuration
-)
-
-# Download and import config examples (picoScan100, multiScan100)
-if(USE_PICOSCAN100 OR USE_MULTISCAN100)
+# Download and import config examples (picoScan100, multiScan100 and multiScan200)
+if(USE_PICOSCAN100 OR USE_MULTISCAN100 OR USE_MULTISCAN200)
   add_example(
     FAMILY ${BUILD_EXAMPLES_DEVICE_TYPE}
     TARGET download_and_import_config

@@ -1,3 +1,4 @@
 blocked_paths:
   - /crown/file
+  - /parameterbackup
   - /update

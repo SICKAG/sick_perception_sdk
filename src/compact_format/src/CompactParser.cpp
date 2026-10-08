@@ -5,47 +5,30 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/compact_format/CompactParser.hpp>
 
+#include "CompactParserContext.hpp"
+#include "CompactTelegram.hpp"
 #include <sick_perception_sdk/common/ByteView.hpp>
-#include <sick_perception_sdk/compact_format/CompactData.hpp>
 #include <sick_perception_sdk/compact_format/Crc32Utils.hpp>
 
 #include <cstdint>
-#include <cstring> // for std::memcpy
-#include <set>
 #include <stdexcept>
-
-static_assert(sizeof(float) == 4);
 
 namespace sick::compact {
 
-auto CompactParser::isChecksumValid(ByteView data) -> bool
+void CompactParser::validateChecksum(ByteView data)
 {
-  if (data.size() < sizeof(std::uint32_t))
+  if (data.size() < telegram::kChecksum.sizeInBytes)
   {
-    return false;
+    throw std::invalid_argument("Data is too short to contain a checksum");
   }
 
-  std::uint32_t expectedCRC = 0;
-  readValueUnsafe(data.last(sizeof(std::uint32_t)), expectedCRC);
+  CompactParserContext context(data.last(telegram::kChecksum.sizeInBytes));
+  auto const crcFromTelegram = context.readValueUnsafe(telegram::kChecksum);
 
-  std::uint32_t const computedCRC = crc32(data.first(data.size() - sizeof(std::uint32_t)));
-  return expectedCRC == computedCRC;
-}
-
-void CompactParser::validateTelegramHeader(TelegramHeader const& header, TelegramType expectedType, std::set<std::uint32_t> expectedVersions)
-{
-  if (header.startOfFrame != kStartOfFrame)
+  std::uint32_t const computedCrc = crc32(data.first(data.size() - telegram::kChecksum.sizeInBytes));
+  if (crcFromTelegram != computedCrc)
   {
-    throw std::invalid_argument("Invalid start of frame");
-  }
-  if (header.telegramType != expectedType)
-  {
-    throw std::invalid_argument("Unsupported telegram type (command ID)");
-  }
-
-  if (expectedVersions.find(header.telegramVersion) == expectedVersions.end())
-  {
-    throw std::invalid_argument("Unsupported telegram version.");
+    throw std::invalid_argument("Invalid checksum");
   }
 }
 

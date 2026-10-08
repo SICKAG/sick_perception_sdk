@@ -7,9 +7,11 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/common/export.hpp>
 
+#include <chrono>
 #include <cstdint>
 #include <ostream>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
@@ -94,6 +96,11 @@ public:
     return {secondsPart, nanosecondsPart};
   }
 
+  constexpr auto toChrono() const -> std::chrono::nanoseconds
+  {
+    return std::chrono::nanoseconds(static_cast<std::chrono::nanoseconds::rep>(m_nanoseconds));
+  }
+
 private:
   value_type m_nanoseconds;
 
@@ -106,6 +113,11 @@ private:
 constexpr auto operator<(Duration const& lhs, Duration const& rhs) -> bool
 {
   return lhs.nanoseconds() < rhs.nanoseconds();
+}
+
+constexpr auto operator>(Duration const& lhs, Duration const& rhs) -> bool
+{
+  return lhs.nanoseconds() > rhs.nanoseconds();
 }
 
 // Arithmetic operators
@@ -127,10 +139,8 @@ constexpr auto operator*(Duration const& lhs, std::uint64_t rhs) -> Duration
   return Duration::fromNanoseconds(lhs.nanoseconds() * static_cast<Duration::value_type>(rhs));
 }
 
-/**
- * Division by a non-Duration scalar is useful for forming partial durations and are therefore only implemented for integers.
- */
-constexpr auto operator/(Duration const& lhs, std::uint32_t rhs) -> Duration
+template <typename IntegerT, typename = std::enable_if_t<std::is_integral_v<IntegerT> && !std::is_same_v<std::remove_cv_t<IntegerT>, bool>>>
+constexpr auto operator/(Duration const& lhs, IntegerT rhs) -> Duration
 {
   return Duration::fromNanoseconds(lhs.nanoseconds() / static_cast<Duration::value_type>(rhs));
 }
@@ -140,22 +150,27 @@ auto SDK_EXPORT operator<<(std::ostream& stream, Duration const& duration) -> st
 
 namespace literals {
 
-constexpr auto operator"" _s(unsigned long long value) -> Duration
+constexpr auto operator""_min(unsigned long long value) -> Duration
+{
+  return Duration::fromSeconds(static_cast<Duration::value_type>(value) * static_cast<Duration::value_type>(60));
+}
+
+constexpr auto operator""_s(unsigned long long value) -> Duration
 {
   return Duration::fromSeconds(static_cast<Duration::value_type>(value));
 }
 
-constexpr auto operator"" _ms(unsigned long long value) -> Duration
+constexpr auto operator""_ms(unsigned long long value) -> Duration
 {
   return Duration::fromMilliseconds(static_cast<Duration::value_type>(value));
 }
 
-constexpr auto operator"" _us(unsigned long long value) -> Duration
+constexpr auto operator""_us(unsigned long long value) -> Duration
 {
   return Duration::fromMicroseconds(static_cast<Duration::value_type>(value));
 }
 
-constexpr auto operator"" _ns(unsigned long long value) -> Duration
+constexpr auto operator""_ns(unsigned long long value) -> Duration
 {
   return Duration::fromNanoseconds(static_cast<Duration::value_type>(value));
 }
@@ -172,12 +187,5 @@ constexpr auto min(Duration const& lhs, Duration const& rhs) -> Duration
 }
 
 } // namespace sick
-
-namespace std {
-
-// NOLINTNEXTLINE(readability-identifier-naming): to_string is standard library style
-auto SDK_EXPORT to_string(sick::Duration const& duration) -> std::string;
-
-} // namespace std
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)

@@ -5,13 +5,12 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/compact_format/PointCloud/UnorganizedPointCloudBuilder.hpp>
 
+#include <sick_perception_sdk/common/CheckedMath.hpp>
 #include <sick_perception_sdk/common/quantities/Timestamp.hpp>
-#include <sick_perception_sdk/compact_format/PointCloud/PointCloudAttributes.hpp>
-#include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
+#include <sick_perception_sdk/compact_format/PointCloud/PointCloudBuilder.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/UnorganizedPointCloud.hpp>
 
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 #include <stdexcept>
 #include <utility>
@@ -29,7 +28,7 @@ UnorganizedPointCloudBuilder::UnorganizedPointCloudBuilder(
   m_pointCloud.m_timestamp      = pointCloudTimestamp;
   m_pointCloud.m_pointSizeBytes = this->addFields();
 
-  m_pointCloud.m_data.resize(maxNumberOfPoints * m_pointCloud.pointSizeBytes());
+  m_pointCloud.m_data.resize(checkedMultiply(maxNumberOfPoints, static_cast<std::size_t>(m_pointCloud.pointSizeBytes())));
 }
 
 void UnorganizedPointCloudBuilder::growBy(std::size_t numberOfPoints)

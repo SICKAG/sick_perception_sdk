@@ -28,20 +28,20 @@ public:
     std::unique_ptr<Socket> socket,
     std::size_t receiveBufferSize,
     std::function<void(DataT)> onNewData,
-    std::function<void(std::exception_ptr)> onError,
+    std::function<void(std::exception_ptr const&)> onError,
     std::chrono::milliseconds firstDataTimeout = std::chrono::milliseconds(0),
     std::chrono::milliseconds newDataTimeout   = std::chrono::milliseconds(0),
     std::string streamName                     = "ReceiverThread"
   )
-    : m_socket(std::move(socket))
+    : m_receiveBuffer(receiveBufferSize)
     , m_onNewData(std::move(onNewData))
     , m_onError(std::move(onError))
-    , m_receiveBuffer(receiveBufferSize)
-    , m_receiveThread(nullptr)
-    , m_runReceiveLoop(false)
+    , m_streamName(std::move(streamName))
+    , m_socket(std::move(socket))
     , m_firstDataTimeout(firstDataTimeout)
     , m_newDataTimeout(newDataTimeout)
-    , m_streamName(std::move(streamName))
+    , m_receiveThread(nullptr)
+    , m_runReceiveLoop(false)
   {
     if (m_socket == nullptr)
     {
@@ -72,6 +72,17 @@ public:
 
     LOG_INFO(m_streamName) << "Stopping receive loop.";
     m_runReceiveLoop = false;
+
+    // Close the socket to abort any blocking recv() call immediately.
+    if (m_socket)
+    {
+      m_socket->closeConnection();
+    }
+
+    // Clear here because this will be used by start() to determine
+    // if the receive loop is already running.
+    m_startTime = std::nullopt;
+
     if (m_receiveThread->joinable())
     {
       m_receiveThread->join();
@@ -107,6 +118,11 @@ protected:
         }
         catch (std::exception const& exception)
         {
+          if (!m_runReceiveLoop)
+          {
+            // Socket was closed by stop() to abort recv() — expected, not an error.
+            break;
+          }
           LOG_WARNING(m_streamName) << "Exception in receive loop: " << exception.what();
           m_onError(std::current_exception());
         }
@@ -188,7 +204,7 @@ protected:
   // NOLINTBEGIN(misc-non-private-member-variables-in-classes, cppcoreguidelines-non-private-member-variables-in-classes)
   std::vector<std::uint8_t> m_receiveBuffer;
   std::function<void(DataT)> m_onNewData;
-  std::function<void(std::exception_ptr)> m_onError;
+  std::function<void(std::exception_ptr const&)> m_onError;
   std::string m_streamName;
   std::unique_ptr<Socket> m_socket;
   // NOLINTEND(misc-non-private-member-variables-in-classes, cppcoreguidelines-non-private-member-variables-in-classes)

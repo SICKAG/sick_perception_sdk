@@ -33,7 +33,7 @@ SPDX-License-Identifier: MIT
  * ## Connection Types
  *
  * Sensors use different connection protocols:
- * - **TCP devices** (e.g., LRS4000): Use `sensorPort` to specify the port
+ * - **TCP devices** (e.g., multiScan200, LRS4000): Use `sensorPort` to specify the port
  *   on the device to which to connect.
  * - **UDP devices** (e.g., picoScan100, multiScan100): Use `receiverPort` to specify the
  *   port on which to listen for incoming UDP packets. Listens on all interfaces.

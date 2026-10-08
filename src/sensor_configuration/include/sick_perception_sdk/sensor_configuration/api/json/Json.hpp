@@ -18,14 +18,12 @@ SPDX-License-Identifier: MIT
 
 namespace sick {
 
-// Define serialization functions of public types before the detail namespace
-// so they can be used by data types in the detail namespace.
-
 // IpV4Address
 inline void to_json(nlohmann::ordered_json& j, IpV4Address const& addr)
 {
   auto const& bytes = addr.bytes();
-  j                 = nlohmann::ordered_json::array({bytes[0], bytes[1], bytes[2], bytes[3]});
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access): fixed-size 4-byte array with constant indices
+  j = nlohmann::ordered_json::array({bytes[0], bytes[1], bytes[2], bytes[3]});
 }
 
 // ResponseHeader

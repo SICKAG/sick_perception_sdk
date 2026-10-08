@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 include(${CMAKE_SOURCE_DIR}/cmake/install-library.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/compiler-defines.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/compiler-warnings.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/clang-tidy.cmake)
 
 set(LIB_NAME "drivers")
@@ -9,9 +10,12 @@ set(LIB_NAME "drivers")
 add_library(${LIB_NAME})
 add_library(${PROJECT_NAME}::${LIB_NAME} ALIAS ${LIB_NAME})
 
+add_sdk_compiler_warnings(TARGET ${LIB_NAME})
+
 set(LIB_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/LRS4000/LRS4000Driver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/multiScan100/MultiScan100Driver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/multiScan200/MultiScan200Driver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/picoScan100/PicoScan100Driver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Receiver/UdpImuReceiver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Receiver/UdpScanDataReceiver.cpp
@@ -24,12 +28,9 @@ target_include_directories(${LIB_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-find_package(plog REQUIRED)
-
 target_link_libraries(${LIB_NAME}
   PUBLIC
   ${PROJECT_NAME}::compact_format
-  plog::plog
 )
 
 target_enable_clang_tidy(
@@ -48,5 +49,4 @@ target_enable_clang_tidy(
 #===============================================================================
 install_sdk_library(
   TARGET ${LIB_NAME}
-  plog
 )

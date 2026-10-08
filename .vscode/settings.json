@@ -20,7 +20,8 @@
     "plog",
     "pthread",
     "SOPAS",
-    "winsock"
+    "winsock",
+    "venv",
   ],
   "C_Cpp.autoAddFileAssociations": false,
   "editor.defaultFormatter": "esbenp.prettier-vscode",

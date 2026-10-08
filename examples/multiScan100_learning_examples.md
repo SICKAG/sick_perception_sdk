@@ -1,7 +1,7 @@
 # multiScan100 Learning Examples
 
-- [Diagnosis](#diagnosis)
-- [More device configuration](#more-device-configuration)
+> [!NOTE]
+> This page covers multiScan100-specific examples only. The **[Shared Learning Examples](shared_learning_examples.md)** page contains the majority of examples, most of which are also applicable to multiScan100.
 
 ## Diagnosis
 

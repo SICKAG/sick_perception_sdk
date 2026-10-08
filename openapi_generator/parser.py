@@ -195,6 +195,9 @@ def _parse_array(prop_name, prop, parent: ObjectDescription) -> str:
             parent.includes.append("#include <cstdint>")
     elif item_type == "number":
         item_type_cpp = _parse_number_format(item_format)
+    elif item_type == "string":
+        item_type_cpp = "std::string"
+        parent.includes.append("#include <string>")
     elif item_type == "object":
         item_type_cpp = prop_name + "Item"
         _parse_object(item_type_cpp, items, parent)
@@ -204,8 +207,10 @@ def _parse_array(prop_name, prop, parent: ObjectDescription) -> str:
     min_number_of_items = prop["minItems"]
     max_number_of_items = prop["maxItems"]
     if min_number_of_items == max_number_of_items:
+        parent.includes.append("#include <array>")
         return f"std::array<{item_type_cpp}, {min_number_of_items}>"
     else:
+        parent.includes.append("#include <vector>")
         return f"std::vector<{item_type_cpp}>"
 
 

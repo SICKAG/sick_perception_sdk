@@ -85,7 +85,7 @@ TEST_P(StreamExtractorTest, corrupted_data_is_detected)
   ASSERT_EQ(0, packets.size());
 
   // Now it must be possible to parse a valid packet again.
-  data    = sick::test::readBinary("data/multiScan136_scan-frame_0.bin");
+  data    = sick::test::readBinary("data/telegram_type_1_multiScan136-frame_0.bin");
   packets = extractor.extractTelegrams(data);
   ASSERT_EQ(1, packets.size());
 }
@@ -123,11 +123,13 @@ INSTANTIATE_TEST_SUITE_P(
   StreamExtractor,
   StreamExtractorTest,
   testing::Values(
-    sick::test::TestParams {"LRS4000_scan", "LRS4581_scan"},
-    sick::test::TestParams {"multiScan100_imu", "multiScan136_imu"},
-    sick::test::TestParams {"multiScan100_scan", "multiScan136_scan"},
-    sick::test::TestParams {"picoScan100_encoder", "picoScan150_encoder"},
-    sick::test::TestParams {"picoScan100_scan", "picoScan150_profile1_scan"}
+    sick::test::TestParams {"tt1_LRS4000", "telegram_type_1_LRS4581"},
+    sick::test::TestParams {"tt1_multiScan100", "telegram_type_1_multiScan136"},
+    sick::test::TestParams {"tt1_picoScan100", "telegram_type_1_picoScan150_profile_1"},
+    sick::test::TestParams {"tt2_multiScan100", "telegram_type_2_multiScan136"},
+    sick::test::TestParams {"tt3_multiScan200", "telegram_type_3_multiScan270_profile_12"},
+    sick::test::TestParams {"tt6_multiScan200", "telegram_type_6_multiScan270_profile_12_minimal"}
+    // sick::test::TestParams {"tt4_picoScan100", "telegram_type_4_v1_picoScan150"}, // FIXME Disabled until new data with format version 2 are available.
   ),
   [](testing::TestParamInfo<sick::test::TestParams> const& info) {
     return info.param.device;
@@ -141,18 +143,20 @@ TEST(StreamExtractorTest, valid_data_with_multiple_frames_of_different_type_can_
     auto const newData = sick::test::readBinary(filePath);
     data.insert(data.end(), newData.begin(), newData.end());
   };
-  load("data/picoScan150_encoder-frame_0.bin");
-  load("data/multiScan136_scan-frame_0.bin");
+  // load("data/telegram_type_4_v1_picoScan150-frame_0.bin"); // FIXME Disabled until new data with format version 2 are available.
+  load("data/telegram_type_1_multiScan136-frame_0.bin");
+  load("data/telegram_type_3_multiScan270_profile_12-frame_0.bin");
+  load("data/telegram_type_6_multiScan270_profile_12_full-frame_0.bin");
 
   sick::compact::StreamExtractor extractor;
   auto const packets = extractor.extractTelegrams(data);
 
-  ASSERT_EQ(2, packets.size());
+  ASSERT_EQ(3, packets.size());
 }
 
 TEST(StreamExtractorTest, corrupted_start_of_frame_is_detected)
 {
-  auto data = sick::test::readBinary("data/multiScan136_scan-frame_0.bin");
+  auto data = sick::test::readBinary("data/telegram_type_1_multiScan136-frame_0.bin");
   data[0]   = 42;
 
   sick::compact::StreamExtractor extractor;
@@ -160,14 +164,14 @@ TEST(StreamExtractorTest, corrupted_start_of_frame_is_detected)
   ASSERT_EQ(0, packets.size());
 
   // Now it must be possible to parse a valid packet again.
-  data    = sick::test::readBinary("data/multiScan136_scan-frame_0.bin");
+  data    = sick::test::readBinary("data/telegram_type_1_multiScan136-frame_0.bin");
   packets = extractor.extractTelegrams(data);
   ASSERT_EQ(1, packets.size());
 }
 
 TEST(StreamExtractorTest, corrupted_frame_id_is_detected)
 {
-  auto data = sick::test::readBinary("data/multiScan136_scan-frame_0.bin");
+  auto data = sick::test::readBinary("data/telegram_type_1_multiScan136-frame_0.bin");
   data[4]   = 42; // Command ID is the 5th byte (index 4).
 
   sick::compact::StreamExtractor extractor;
@@ -175,7 +179,7 @@ TEST(StreamExtractorTest, corrupted_frame_id_is_detected)
   ASSERT_EQ(0, packets.size());
 
   // Now it must be possible to parse a valid packet again.
-  data    = sick::test::readBinary("data/multiScan136_scan-frame_0.bin");
+  data    = sick::test::readBinary("data/telegram_type_1_multiScan136-frame_0.bin");
   packets = extractor.extractTelegrams(data);
   ASSERT_EQ(1, packets.size());
 }

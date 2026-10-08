@@ -1,15 +1,24 @@
+# Collect all example executables in one place, also for standalone example builds that pull in ../shared.
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+endif()
+
 # Set boolean defines based on BUILD_EXAMPLES_DEVICE_TYPE
 set(USE_PICOSCAN100 OFF)
 set(USE_MULTISCAN100 OFF)
+set(USE_MULTISCAN200 OFF)
 set(USE_LRS4000 OFF)
+
 if(BUILD_EXAMPLES_DEVICE_TYPE STREQUAL "picoScan100")
   set(USE_PICOSCAN100 ON)
 elseif(BUILD_EXAMPLES_DEVICE_TYPE STREQUAL "multiScan100")
   set(USE_MULTISCAN100 ON)
+elseif(BUILD_EXAMPLES_DEVICE_TYPE STREQUAL "multiScan200")
+  set(USE_MULTISCAN200 ON)
 elseif(BUILD_EXAMPLES_DEVICE_TYPE STREQUAL "LRS4000")
   set(USE_LRS4000 ON)
 else()
-  message(FATAL_ERROR "Invalid BUILD_EXAMPLES_DEVICE_TYPE: ${BUILD_EXAMPLES_DEVICE_TYPE}. Valid values: picoScan100, multiScan100, LRS4000")
+  message(FATAL_ERROR "sick_perception_sdk: Invalid BUILD_EXAMPLES_DEVICE_TYPE: ${BUILD_EXAMPLES_DEVICE_TYPE}. Valid values: picoScan100, multiScan100, multiScan200, LRS4000")
 endif()
 
 # Function to add an example project.
@@ -21,11 +30,13 @@ function(add_example)
   cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   if(NOT ARG_FAMILY)
-    message(FATAL_ERROR "add_example: FAMILY argument is required")
+    message(FATAL_ERROR "sick_perception_sdk: add_example: FAMILY argument is required")
   endif()
   if(NOT ARG_TARGET)
-    message(FATAL_ERROR "add_example: TARGET argument is required")
+    message(FATAL_ERROR "sick_perception_sdk: add_example: TARGET argument is required")
   endif()
+
+  find_package(CLI11)
 
   set(TARGET_NAME "${ARG_FAMILY}_${ARG_TARGET}_example")
 
@@ -38,7 +49,7 @@ function(add_example)
   endif()
 
   if(ARG_DEPENDENCIES)
-    target_link_libraries(${TARGET_NAME} PRIVATE ${ARG_DEPENDENCIES})
+    target_link_libraries(${TARGET_NAME} PRIVATE ${ARG_DEPENDENCIES} CLI11::CLI11)
   endif()
 
   # Apply device type compile definitions for shared examples
@@ -47,6 +58,9 @@ function(add_example)
   endif()
   if(USE_MULTISCAN100)
     target_compile_definitions(${TARGET_NAME} PRIVATE USE_MULTISCAN100)
+  endif()
+  if(USE_MULTISCAN200)
+    target_compile_definitions(${TARGET_NAME} PRIVATE USE_MULTISCAN200)
   endif()
   if(USE_LRS4000)
     target_compile_definitions(${TARGET_NAME} PRIVATE USE_LRS4000)

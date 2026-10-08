@@ -8,7 +8,7 @@ SICK AG products and services are subject to the highest quality requirements. T
 >
 > **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them to the SICK Product Security Incident Response Team [psirt@sick.de](psirt@sick.de). Reports can be sent in German or English. For more details visit: [https://www.sick.com](https://www.sick.com/ag/en/service-and-support/the-sick-product-security-incident-response-team-sick-psirt/w/psirt).
+Instead, please report them to the SICK Product Security Incident Response Team [psirt@sick.de](mailto:psirt@sick.de). Reports can be sent in German or English. For more details visit: [https://www.sick.com](https://www.sick.com/ag/en/service-and-support/the-sick-product-security-incident-response-team-sick-psirt/w/psirt).
 
 ## Product Usage Limitations and Security Guidelines
 

@@ -6,8 +6,9 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/quantities/Distance.hpp>
 
 #include <cmath>
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+using namespace sick::literals;
 
 TEST(DistanceTest, default_construction_is_nan)
 {
@@ -89,7 +90,6 @@ TEST(DistanceTest, divide_operator_divides_by_integer)
 
 TEST(DistanceTest, literal_meter_constructs_correct_distance)
 {
-  using sick::literals::operator"" _m;
   auto const distance = 42.5_m;
   EXPECT_FLOAT_EQ(distance.meters(), 42.5f);
 }
@@ -100,11 +100,4 @@ TEST(DistanceTest, fromMillimeters_converts_small_value_roundtrip)
   auto const distance         = sick::Distance::fromMillimeters(smallMillimeters);
   auto const roundtripped     = distance.millimeters();
   EXPECT_FLOAT_EQ(roundtripped, smallMillimeters);
-}
-
-TEST(DistanceTest, to_string_returns_value_with_unit)
-{
-  auto const distance = sick::Distance::fromMeters(42.5f);
-  EXPECT_THAT(std::to_string(distance), ::testing::HasSubstr("42.5"));
-  EXPECT_THAT(std::to_string(distance), ::testing::EndsWith(" m"));
 }

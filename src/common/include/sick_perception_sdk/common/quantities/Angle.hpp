@@ -6,11 +6,13 @@ SPDX-License-Identifier: MIT
 #pragma once
 
 #include <sick_perception_sdk/common/export.hpp>
+#include <sick_perception_sdk/common/numbers.hpp>
 
 #include <cmath>
 #include <limits>
 #include <ostream>
 #include <string>
+#include <type_traits>
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 
@@ -32,7 +34,7 @@ public:
 
   constexpr static auto fromDegrees(Angle::value_type degrees) -> Angle
   {
-    return Angle(degrees * static_cast<Angle::value_type>(M_PI) / 180.0f);
+    return Angle(degrees * static_cast<Angle::value_type>(numbers::pi) / 180.0f);
   }
 
   constexpr static auto fromRadians(Angle::value_type rad) -> Angle
@@ -42,7 +44,7 @@ public:
 
   constexpr auto degrees() const -> Angle::value_type
   {
-    return m_radians * static_cast<Angle::value_type>(180.0f / M_PI);
+    return m_radians * static_cast<Angle::value_type>(180.0f / numbers::pi);
   }
 
   constexpr auto radians() const -> Angle::value_type
@@ -135,10 +137,8 @@ constexpr auto operator*(Angle const& lhs, std::size_t rhs) -> Angle
   return Angle::fromRadians(lhs.radians() * static_cast<Angle::value_type>(rhs));
 }
 
-/**
- * Division by a non-Angle scalar is useful for forming partial angles and are therefore only implemented for integers.
- */
-constexpr auto operator/(Angle const& lhs, unsigned int rhs) -> Angle
+template <typename IntegerT, typename = std::enable_if_t<std::is_integral_v<IntegerT> && !std::is_same_v<std::remove_cv_t<IntegerT>, bool>>>
+constexpr auto operator/(Angle const& lhs, IntegerT rhs) -> Angle
 {
   return Angle::fromRadians(lhs.radians() / static_cast<Angle::value_type>(rhs));
 }
@@ -148,22 +148,24 @@ auto SDK_EXPORT operator<<(std::ostream& stream, Angle const& angle) -> std::ost
 
 namespace literals {
 
-constexpr auto operator"" _deg(long double value) -> Angle
+// NOLINTNEXTLINE(google-runtime-float): user-defined literals require a long double parameter
+constexpr auto operator""_deg(long double value) -> Angle
 {
   return Angle::fromDegrees(static_cast<Angle::value_type>(value));
 }
 
-constexpr auto operator"" _deg(unsigned long long value) -> Angle
+constexpr auto operator""_deg(unsigned long long value) -> Angle
 {
   return Angle::fromDegrees(static_cast<Angle::value_type>(value));
 }
 
-constexpr auto operator"" _rad(long double value) -> Angle
+// NOLINTNEXTLINE(google-runtime-float): user-defined literals require a long double parameter
+constexpr auto operator""_rad(long double value) -> Angle
 {
   return Angle::fromRadians(static_cast<Angle::value_type>(value));
 }
 
-constexpr auto operator"" _rad(unsigned long long value) -> Angle
+constexpr auto operator""_rad(unsigned long long value) -> Angle
 {
   return Angle::fromRadians(static_cast<Angle::value_type>(value));
 }
@@ -174,12 +176,5 @@ auto SDK_EXPORT sin(Angle const& angle) -> float;
 auto SDK_EXPORT cos(Angle const& angle) -> float;
 
 } // namespace sick
-
-namespace std {
-
-// NOLINTNEXTLINE(readability-identifier-naming): to_string is standard library style
-auto SDK_EXPORT to_string(sick::Angle const& angle) -> std::string;
-
-} // namespace std
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)

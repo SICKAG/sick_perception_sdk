@@ -5,13 +5,19 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanDataParser.hpp>
 
+#include "../CompactParserContext.hpp"
+#include "../CompactTelegram.hpp"
+#include "../WireInfo.hpp"
+#include "CompactTelegram.hpp"
+#include <sick_perception_sdk/common/BitField.hpp>
 #include <sick_perception_sdk/common/ByteView.hpp>
+#include <sick_perception_sdk/common/CheckedMath.hpp>
 #include <sick_perception_sdk/common/logging/logging.hpp>
 #include <sick_perception_sdk/common/quantities/Angle.hpp>
+#include <sick_perception_sdk/common/quantities/Distance.hpp>
 #include <sick_perception_sdk/common/quantities/Timestamp.hpp>
 #include <sick_perception_sdk/compact_format/CompactData.hpp>
 #include <sick_perception_sdk/compact_format/CompactParser.hpp>
-#include <sick_perception_sdk/compact_format/Crc32Utils.hpp>
 #include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanData.hpp>
 
 #include <cassert>
@@ -20,258 +26,379 @@ SPDX-License-Identifier: MIT
 #include <cstring>
 #include <limits>
 #include <optional>
+#include <set>
 #include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace sick::compact::scan_data {
 
-auto Parser::readModuleMetaData(ByteView data, std::uint32_t version, Module::MetaData& metaData) -> std::size_t
+namespace {
+
+std::set<int> const kSupportedTelegramVersions = {3, 4};
+
+struct ModuleWireInfo
 {
-  std::uint8_t reserved = 0;
+  std::uint64_t segmentIndex {0};
+  std::uint64_t frameSequenceNumber {0};
+  std::uint32_t senderSerialNumber {0};
+  float distanceScalingFactor {1.0f};
+  std::size_t numberOfBytesOfNextModule {0};
+  BitField<EchoContent> echoContent;
+  BitField<BeamContent> beamContent;
+};
 
+// In the binary data the intensity value is between 0 and 65,535, in the data structure it is between 0.0 and 1.0.
+constexpr float kIntensityScalingFactor = 65'535.0f;
+
+// The offset from the start of the module meta data of the numberOfRows field.
+constexpr std::size_t kNumberOfRowsOffset =
+  telegram::module_meta_data::kSegmentIndex.sizeInBytes + telegram::module_meta_data::kFrameSequenceNumber.sizeInBytes +
+  telegram::module_meta_data::kSenderSerialNumber.sizeInBytes;
+
+// The number of bytes by which the module meta data grows per row in the module.
+constexpr std::size_t kModuleMetaDataSizePerRow =
+  telegram::module_meta_data::kStartTimestamp.sizeInBytes + telegram::module_meta_data::kEndTimestamp.sizeInBytes +
+  telegram::module_meta_data::kElevations.sizeInBytes + telegram::module_meta_data::kFirstBeamAzimuths.sizeInBytes +
+  telegram::module_meta_data::kLastBeamAzimuths.sizeInBytes;
+
+template <typename ValueT, typename CompactValueT, typename AccessorT>
+void readRowMetaDataArray(
+  CompactParserContext& context,
+  std::size_t numberOfRows,
+  telegram::CompactField<CompactValueT> const& field,
+  std::vector<Module::RowMetaData>& rowMetaData,
+  AccessorT memberAccessor
+)
+{
+  for (std::size_t i = 0; i < numberOfRows; ++i)
+  {
+    memberAccessor(rowMetaData[i]) = context.readValueUnsafe<ValueT, CompactValueT>(field);
+  }
+}
+
+auto readModuleMetaData(CompactParserContext& context, std::uint32_t telegramVersion, ModuleWireInfo& telegramModuleWireInfo, Module& module)
+{
+  auto const initialNumberOfBytesRemaining = context.numberOfBytesRemaining();
   std::size_t metaDataFixedSize =
-    sizeof(metaData.segmentIndex)                //
-    + sizeof(metaData.frameSequenceNumber)       //
-    + sizeof(metaData.senderSerialNumber)        //
-    + sizeof(metaData.numberOfRows)              //
-    + sizeof(metaData.numberOfColumns)           //
-    + sizeof(metaData.numberOfEchoesPerBeam)     //
-    + sizeof(metaData.numberOfBytesOfNextModule) //
-    + sizeof(std::uint8_t)                       // availability, not stored in meta data
-    + sizeof(metaData.echoContent)               //
-    + sizeof(metaData.beamContent)               //
-    + sizeof(reserved);
+    telegram::module_meta_data::kSegmentIndex.sizeInBytes            //
+    + telegram::module_meta_data::kFrameSequenceNumber.sizeInBytes   //
+    + telegram::module_meta_data::kSenderSerialNumber.sizeInBytes    //
+    + telegram::module_meta_data::kNumberOfRows.sizeInBytes          //
+    + telegram::module_meta_data::kNumberOfColumns.sizeInBytes       //
+    + telegram::module_meta_data::kNumberOfEchoesPerBeam.sizeInBytes //
+    + telegram::module_meta_data::kNextModulePayloadSize.sizeInBytes //
+    + telegram::module_meta_data::kAvailability.sizeInBytes          //
+    + telegram::module_meta_data::kEchoContent.sizeInBytes           //
+    + telegram::module_meta_data::kBeamContent.sizeInBytes           //
+    + telegram::module_meta_data::kReserved.sizeInBytes;
 
-  if (version == 4)
+  if (telegramVersion == 4)
   {
-    metaDataFixedSize += sizeof(metaData.distanceScalingFactor); // Only available in version 4
+    metaDataFixedSize += telegram::module_meta_data::kDistanceScalingFactor.sizeInBytes; // Only available in version 4
   }
 
-  assert(metaDataFixedSize <= static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()));
-  if (data.size() < metaDataFixedSize)
+  if (initialNumberOfBytesRemaining < metaDataFixedSize)
   {
-    throw std::invalid_argument("Not enough data to read the module meta data.");
+    throw std::invalid_argument("Not enough data to read module meta data.");
   }
 
-  std::size_t readPosition = 0;
-
-  // FIXME Potential for optimization: Read all of those variables at once with a single
-  // memcpy(&metaData.segmentIndex, data.data() + readPosition, sizeOfFirstFixedSizePortionOfMetaData)
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.segmentIndex);
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.frameSequenceNumber);
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.senderSerialNumber);
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.numberOfRows);
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.numberOfColumns);
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.numberOfEchoesPerBeam);
-
-  auto const metaDataVariableSize = metaData.numberOfRows * sizeof(Module::RowMetaData);
-  if (metaDataFixedSize + metaDataVariableSize > static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()))
+  telegramModuleWireInfo.segmentIndex        = context.readValueUnsafe(telegram::module_meta_data::kSegmentIndex);
+  telegramModuleWireInfo.frameSequenceNumber = context.readValueUnsafe(telegram::module_meta_data::kFrameSequenceNumber);
+  telegramModuleWireInfo.senderSerialNumber  = context.readValueUnsafe(telegram::module_meta_data::kSenderSerialNumber);
+  auto const numberOfRows                    = context.readValueUnsafe<std::size_t>(telegram::module_meta_data::kNumberOfRows);
+  if (initialNumberOfBytesRemaining < checkedAdd(checkedMultiply(numberOfRows, kModuleMetaDataSizePerRow), metaDataFixedSize))
   {
-    throw std::invalid_argument("Number of layers is too large, causing overflow.");
+    throw std::invalid_argument("Not enough data to read module meta data.");
   }
-  if (data.size() < metaDataFixedSize + metaDataVariableSize)
-  {
-    throw std::invalid_argument("Not enough data to read the module meta data.");
-  }
+
+  module.numberOfColumns       = context.readValueUnsafe<std::size_t>(telegram::module_meta_data::kNumberOfColumns);
+  module.numberOfEchoesPerBeam = context.readValueUnsafe<std::size_t>(telegram::module_meta_data::kNumberOfEchoesPerBeam);
 
   // Row meta data
-  auto const numberOfRows = static_cast<std::size_t>(metaData.numberOfRows);
-  metaData.rowMetaData    = std::vector<Module::RowMetaData>(numberOfRows);
-  readPosition += readRowMetaDataArray<Timestamp::value_type>(
-    data.subview(readPosition),
+  module.rowMetaData = std::vector<Module::RowMetaData>(numberOfRows);
+  readRowMetaDataArray<Timestamp::value_type>(
+    context,
     numberOfRows,
-    metaData.rowMetaData,
+    telegram::module_meta_data::kStartTimestamp,
+    module.rowMetaData,
     [](Module::RowMetaData& metaData) -> Timestamp::value_type& {
       return metaData.firstBeamTimestamp.rawValueMutable();
     }
   );
-  readPosition += readRowMetaDataArray<Timestamp::value_type>(
-    data.subview(readPosition),
+  readRowMetaDataArray<Timestamp::value_type>(
+    context,
     numberOfRows,
-    metaData.rowMetaData,
+    telegram::module_meta_data::kEndTimestamp,
+    module.rowMetaData,
     [](Module::RowMetaData& metaData) -> Timestamp::value_type& {
       return metaData.lastBeamTimestamp.rawValueMutable();
     }
   );
-  readPosition += readRowMetaDataArray<Angle::value_type>(
-    data.subview(readPosition),
+  readRowMetaDataArray<Angle::value_type>(
+    context,
     numberOfRows,
-    metaData.rowMetaData,
+    telegram::module_meta_data::kElevations,
+    module.rowMetaData,
     [](Module::RowMetaData& metaData) -> Angle::value_type& {
       return metaData.elevation.rawValueMutable();
     }
   );
-  readPosition += readRowMetaDataArray<Angle::value_type>(
-    data.subview(readPosition),
+  readRowMetaDataArray<Angle::value_type>(
+    context,
     numberOfRows,
-    metaData.rowMetaData,
+    telegram::module_meta_data::kFirstBeamAzimuths,
+    module.rowMetaData,
     [](Module::RowMetaData& metaData) -> Angle::value_type& {
       return metaData.firstBeamAzimuth.rawValueMutable();
     }
   );
-  readPosition += readRowMetaDataArray<Angle::value_type>(
-    data.subview(readPosition),
+  readRowMetaDataArray<Angle::value_type>(
+    context,
     numberOfRows,
-    metaData.rowMetaData,
+    telegram::module_meta_data::kLastBeamAzimuths,
+    module.rowMetaData,
     [](Module::RowMetaData& metaData) -> Angle::value_type& {
       return metaData.lastBeamAzimuth.rawValueMutable();
     }
   );
 
-  if (version == 4)
+  telegramModuleWireInfo.distanceScalingFactor = 1.0f;
+
+  if (telegramVersion == 4)
   {
-    readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.distanceScalingFactor);
-  }
-  else
-  {
-    metaData.distanceScalingFactor = 1.0f;
+    telegramModuleWireInfo.distanceScalingFactor = context.readValueUnsafe<float, float32>(telegram::module_meta_data::kDistanceScalingFactor);
   }
 
-  // FIXME Potential for optimization: Read all of those variables at once with a single
-  // memcpy(&metaData.numberOfBytesOfNextModule, data.data() + readPosition, sizeOfSecondFixedSizePortionOfMetaData)
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.numberOfBytesOfNextModule);
-  readPosition += sizeof(std::uint8_t); // availability, not stored in meta data
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.echoContent);
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), metaData.beamContent);
-  readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), reserved);
+  telegramModuleWireInfo.numberOfBytesOfNextModule = context.readValueUnsafe<size_t>(telegram::module_meta_data::kNextModulePayloadSize);
+  context.skipValue(telegram::module_meta_data::kAvailability);
+  telegramModuleWireInfo.echoContent = context.readValueUnsafe<BitField<EchoContent>>(telegram::module_meta_data::kEchoContent);
+  telegramModuleWireInfo.beamContent = context.readValueUnsafe<BitField<BeamContent>>(telegram::module_meta_data::kBeamContent);
+  context.skipValue(telegram::module_meta_data::kReserved);
 
-  return readPosition;
+  return telegramModuleWireInfo;
 }
 
-auto Parser::readModuleBeamData(ByteView data, Module::MetaData const& metaData, std::vector<Column>& columns) -> std::size_t
+void readModuleBeamData(CompactParserContext& context, ModuleWireInfo const& telegramModuleWireInfo, Module& module)
 {
   std::size_t sizeOfEchoData = 0;
-  if ((metaData.echoContent.isSet(EchoContent::Distance)))
+  if ((telegramModuleWireInfo.echoContent.isSet(EchoContent::Distance)))
   {
-    sizeOfEchoData += kSizeOfBinaryDistance;
+    sizeOfEchoData += telegram::beam_data::kDistance.sizeInBytes;
   }
-  if ((metaData.echoContent.isSet(EchoContent::Intensity)))
+  if ((telegramModuleWireInfo.echoContent.isSet(EchoContent::Intensity)))
   {
-    sizeOfEchoData += kSizeOfBinaryIntensity;
+    sizeOfEchoData += telegram::beam_data::kIntensity.sizeInBytes;
   }
 
   std::size_t sizeOfBeamData = 0;
-  if ((metaData.beamContent.isSet(BeamContent::Properties)))
+  if ((telegramModuleWireInfo.beamContent.isSet(BeamContent::Properties)))
   {
-    sizeOfBeamData += sizeof(Beam::properties);
+    sizeOfBeamData += telegram::beam_data::kProperties.sizeInBytes;
   }
-  if ((metaData.beamContent.isSet(BeamContent::Azimuth)))
+  if ((telegramModuleWireInfo.beamContent.isSet(BeamContent::Azimuth)))
   {
-    sizeOfBeamData += kSizeOfBinaryAzimuth;
+    sizeOfBeamData += telegram::beam_data::kAngle.sizeInBytes;
   }
 
-  auto const numberOfBeamsInModule = static_cast<std::size_t>(metaData.numberOfColumns) * static_cast<std::size_t>(metaData.numberOfRows);
-  auto const sizeOfBeamsData       = static_cast<std::size_t>(numberOfBeamsInModule * (sizeOfBeamData + metaData.numberOfEchoesPerBeam * sizeOfEchoData));
+  auto const numberOfBeamsInModule = checkedMultiply(module.numberOfColumns, module.rowMetaData.size());
+  auto const numberOfSamples       = checkedMultiply(numberOfBeamsInModule, module.numberOfEchoesPerBeam);
+  auto const sizeOfBeamsData =
+    checkedMultiply(numberOfBeamsInModule, checkedAdd(sizeOfBeamData, checkedMultiply(module.numberOfEchoesPerBeam, sizeOfEchoData)));
 
   if (sizeOfBeamsData > static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()))
   {
     throw std::invalid_argument("Number of beams is too large, causing overflow.");
   }
-  if (data.size() < sizeOfBeamsData)
+  if (context.numberOfBytesRemaining() < sizeOfBeamsData)
   {
     throw std::invalid_argument("Not enough data to read the beams.");
   }
 
-  std::size_t readPosition = 0;
-  columns.resize(metaData.numberOfColumns);
-  for (auto& column : columns)
+  bool const hasDistance   = telegramModuleWireInfo.echoContent.isSet(EchoContent::Distance);
+  bool const hasIntensity  = telegramModuleWireInfo.echoContent.isSet(EchoContent::Intensity);
+  bool const hasProperties = telegramModuleWireInfo.beamContent.isSet(BeamContent::Properties);
+  bool const hasAzimuth    = telegramModuleWireInfo.beamContent.isSet(BeamContent::Azimuth);
+
+  auto const numberOfEchoes  = module.numberOfEchoesPerBeam;
+  auto const numberOfRows    = module.rowMetaData.size();
+  auto const numberOfColumns = module.numberOfColumns;
+
+  // Pre-allocate flat arrays
+  if (hasDistance)
   {
-    column.resize(metaData.numberOfRows);
-    for (auto& beam : column)
+    module.distances.resize(numberOfSamples);
+  }
+  if (hasIntensity)
+  {
+    module.intensities.resize(numberOfSamples, std::numeric_limits<float>::quiet_NaN());
+  }
+  if (hasProperties)
+  {
+    module.beamProperties.resize(numberOfBeamsInModule);
+  }
+  if (hasAzimuth)
+  {
+    module.beamAzimuths.resize(numberOfBeamsInModule);
+  }
+
+  for (std::size_t columnIndex = 0; columnIndex < numberOfColumns; ++columnIndex)
+  {
+    for (std::size_t rowIndex = 0; rowIndex < numberOfRows; ++rowIndex)
     {
-      beam.echoes.resize(metaData.numberOfEchoesPerBeam);
-      for (auto& echo : beam.echoes)
+      auto const flatBeamIndex = computeBeamIndex(module, columnIndex, rowIndex);
+
+      for (std::size_t echoIndex = 0; echoIndex < numberOfEchoes; ++echoIndex)
       {
-        if (metaData.echoContent.isSet(EchoContent::Distance))
+        auto const flatSampleIndex = computeSampleIndex(module, columnIndex, rowIndex, echoIndex);
+
+        if (hasDistance)
         {
-          // echoDistance is not necessarily given in millimeters.
-          // It needs to be scaled by metaData.distanceScalingFactor to obtain the measured distance in millimeters.
-          std::uint16_t echoDistanceRaw = 0;
-          readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), echoDistanceRaw);
-          echo.distance = Distance::fromMillimeters(static_cast<float>(echoDistanceRaw) * metaData.distanceScalingFactor);
+          auto const echoDistanceRaw        = context.readValueUnsafe<float>(telegram::beam_data::kDistance);
+          module.distances[flatSampleIndex] = Distance::fromMillimeters(echoDistanceRaw * telegramModuleWireInfo.distanceScalingFactor);
         }
-        if (metaData.echoContent.isSet(EchoContent::Intensity))
+        if (hasIntensity)
         {
-          std::uint16_t intensity = 0;
-          readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), intensity);
-          echo.intensity = static_cast<float>(intensity) / kIntensityScalingFactor;
+          auto const intensity                = context.readValueUnsafe<float>(telegram::beam_data::kIntensity) / kIntensityScalingFactor;
+          module.intensities[flatSampleIndex] = intensity;
         }
       }
-      if (metaData.beamContent.isSet(BeamContent::Properties))
+
+      // AXIVION Next Construct CertC++-MEM30 CertC++-MEM50 : Module vectors are pre-allocated with resize(), not modified during iteration.
+      if (hasProperties)
       {
-        beam.properties = 0;
-        readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), beam.properties);
+        module.beamProperties[flatBeamIndex] = BitField<BeamProperties>(context.readValueUnsafe<std::uint8_t, std::uint8_t>(telegram::beam_data::kProperties));
       }
-      if (metaData.beamContent.isSet(BeamContent::Azimuth))
+      // AXIVION Next Construct CertC++-MEM30 CertC++-MEM50 : Module vectors are pre-allocated with resize(), not modified during iteration.
+      if (hasAzimuth)
       {
-        std::uint16_t angleUint16 = 0;
-        readPosition += CompactParser::readValueUnsafe(data.subview(readPosition), angleUint16);
+        auto const azimuthRaw = context.readValueUnsafe<float>(telegram::beam_data::kAngle);
 
         // See SICK Compact format description (document number 8028132 on www.sick.com):
         // angleUint = angleRad * 5215 + 16384
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): see documentation
-        beam.azimuth = Angle::fromRadians((static_cast<float>(angleUint16) - 16384.0f) / 5215.0f);
+        module.beamAzimuths[flatBeamIndex] = Angle::fromRadians((azimuthRaw - 16384.0f) / 5215.0f);
       }
     }
   }
-  return readPosition;
 }
 
-auto Parser::readModule(ByteView data, std::uint32_t version, Module& module) -> std::size_t
+void readModule(CompactParserContext& context, std::uint32_t telegramVersion, ModuleWireInfo& moduleWireInfo, Module& module)
 {
-  std::size_t readPosition = readModuleMetaData(data, version, module.metaData);
-  readPosition += readModuleBeamData(data.subview(readPosition), module.metaData, module.columns);
-  return readPosition;
+  readModuleMetaData(context, telegramVersion, moduleWireInfo, module);
+  readModuleBeamData(context, moduleWireInfo, module);
 }
 
-auto Parser::validateAndParse(ByteView data, bool validateChecksum) -> ScanData
+auto getNumberOfBytesOfNextModule(ByteView data, std::uint32_t telegramVersion) -> std::optional<std::size_t>
 {
-  LOG_FAST_LOOP_INFO("ScanDataParser") << "Validating and parsing " << data.size() << " bytes of scan data.";
-  TelegramHeader telegramHeader;
-  std::size_t readPosition = CompactParser::readValue(data, telegramHeader);
-  CompactParser::validateTelegramHeader(telegramHeader, TelegramType::ScanData, {3, 4});
-
-  // We must parse and validate the checksum *after* reading all the modules because the for telegram type 1
-  // the field `payloadLength` is just the size of the first module, not the whole payload.
-  // That is not really the purpose of a checksum but the format leaves us no choice.
-
-  std::vector<Module> modules;
-
-  std::uint32_t numberOfBytesOfNextModule = telegramHeader.payloadLength;
-  while (numberOfBytesOfNextModule > 0)
-  {
-    Module module;
-    readPosition += readModule(data.subview(readPosition), telegramHeader.telegramVersion, module);
-    modules.push_back(module);
-    numberOfBytesOfNextModule = module.metaData.numberOfBytesOfNextModule;
-  }
-
-  // read checksum
-  std::uint32_t receivedChecksum = 0;
-  readPosition += CompactParser::readValue(data.subview(readPosition), receivedChecksum);
-
-  // Verify checksum
-  std::uint32_t const computedChecksum = sick::compact::crc32(data.first(readPosition - 4));
-  if (validateChecksum && receivedChecksum != computedChecksum)
-  {
-    throw std::invalid_argument("Checksum verification failed");
-  }
-
-  return {telegramHeader, modules, receivedChecksum};
-}
-
-auto Parser::getSize(ByteView data) const -> std::optional<std::size_t>
-{
-  if (data.size() < sizeof(TelegramHeader))
+  if (data.size() < kNumberOfRowsOffset + telegram::module_meta_data::kNumberOfRows.sizeInBytes)
   {
     return std::nullopt;
   }
 
-  TelegramHeader telegramHeader;
-  std::size_t readPosition = readValue(data, telegramHeader);
-  CompactParser::validateTelegramHeader(telegramHeader, TelegramType::ScanData, {3, 4});
+  CompactParserContext context {data.subview(kNumberOfRowsOffset)};
 
-  std::uint32_t numberOfBytesOfCurrentModule = telegramHeader.payloadLength;
+  auto numberOfRows = context.readValueUnsafe<std::size_t>(telegram::module_meta_data::kNumberOfRows);
+
+  std::size_t nextModuleSizeOffset = checkedAdd(
+    telegram::module_meta_data::kSegmentIndex.sizeInBytes + telegram::module_meta_data::kFrameSequenceNumber.sizeInBytes +
+      telegram::module_meta_data::kSenderSerialNumber.sizeInBytes + telegram::module_meta_data::kNumberOfRows.sizeInBytes +
+      telegram::module_meta_data::kNumberOfColumns.sizeInBytes + telegram::module_meta_data::kNumberOfEchoesPerBeam.sizeInBytes,
+    checkedMultiply(numberOfRows, kModuleMetaDataSizePerRow)
+  );
+  if (telegramVersion == 4)
+  {
+    nextModuleSizeOffset += telegram::module_meta_data::kDistanceScalingFactor.sizeInBytes; // Only available in version 4
+  }
+  if (nextModuleSizeOffset > static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()))
+  {
+    throw std::invalid_argument("Next module size is too large, causing overflow.");
+  }
+  if (data.size() < checkedAdd(nextModuleSizeOffset, telegram::module_meta_data::kNextModulePayloadSize.sizeInBytes))
+  {
+    return std::nullopt;
+  }
+
+  context = CompactParserContext(data.subview(nextModuleSizeOffset));
+  return context.readValueUnsafe<std::size_t>(telegram::module_meta_data::kNextModulePayloadSize);
+}
+
+} // namespace
+
+auto Parser::validateAndParse(ByteView data, bool validateChecksum) -> ScanData
+{
+  LOG_FAST_LOOP_INFO("ScanDataParser") << "Validating and parsing " << data.size() << " bytes of scan data.";
+
+  if (validateChecksum)
+  {
+    CompactParser::validateChecksum(data);
+  }
+
+  CompactParserContext context {data};
+
+  TelegramHeader telegramHeader;
+  TelegramHeaderWireInfo telegramHeaderWireInfo;
+  if (readAndValidateTelegramHeaderCommon(context, TelegramType::ScanData, kSupportedTelegramVersions, telegramHeader, telegramHeaderWireInfo) ==
+      HeaderReadResult::InsufficientData)
+  {
+    throw std::invalid_argument("Not enough data to read the telegram header.");
+  }
+
+  // We must parse and validate the checksum *after* reading all the modules because for telegram type 1
+  // the field `payloadLength` is just the size of the first module, not the whole payload.
+  // That is not really the purpose of a checksum but the format leaves us no choice.
+
+  std::vector<Module> modules;
+  std::vector<ModuleWireInfo> moduleWireInfos;
+
+  std::size_t numberOfBytesOfNextModule = telegramHeaderWireInfo.payloadLength;
+  // AXIVION Disable CertC++-MEM30: moduleWireInfos[0] is accessed only after loop completes and emptiness is checked.
+  // AXIVION Disable CertC++-MEM50: moduleWireInfos[0] is accessed only after loop completes and emptiness is checked.
+  while (numberOfBytesOfNextModule > 0)
+  {
+    ModuleWireInfo moduleWireInfo;
+    Module module;
+    readModule(context, telegramHeaderWireInfo.telegramVersion, moduleWireInfo, module);
+    modules.push_back(std::move(module));
+    moduleWireInfos.push_back(moduleWireInfo);
+    numberOfBytesOfNextModule = moduleWireInfo.numberOfBytesOfNextModule;
+  }
+
+  if (context.numberOfBytesRemaining() != compact::telegram::kChecksum.sizeInBytes)
+  {
+    throw std::invalid_argument(
+      "Expected exactly " + std::to_string(compact::telegram::kChecksum.sizeInBytes) + " bytes for the checksum at the end of the telegram, but found " +
+      std::to_string(context.numberOfBytesRemaining()) + " bytes."
+    );
+  }
+
+  if (moduleWireInfos.empty())
+  {
+    throw std::invalid_argument("Scan data telegram must contain at least one module");
+  }
+
+  telegramHeader.senderSerialNumber = moduleWireInfos[0].senderSerialNumber;
+  // AXIVION Enable CertC++-MEM30
+  // AXIVION Enable CertC++-MEM50
+
+  return {telegramHeader, moduleWireInfos[0].frameSequenceNumber, moduleWireInfos[0].segmentIndex, std::move(modules)};
+}
+
+auto Parser::getSize(ByteView data) const -> std::optional<std::size_t>
+{
+  CompactParserContext context {data};
+
+  TelegramHeader telegramHeader;
+  TelegramHeaderWireInfo telegramHeaderWireInfo;
+  if (readAndValidateTelegramHeaderCommon(context, TelegramType::ScanData, kSupportedTelegramVersions, telegramHeader, telegramHeaderWireInfo) ==
+      HeaderReadResult::InsufficientData)
+  {
+    return std::nullopt;
+  }
+  std::size_t readPosition = context.readPosition();
+
+  std::size_t numberOfBytesOfCurrentModule = telegramHeaderWireInfo.payloadLength;
   while (numberOfBytesOfCurrentModule > 0)
   {
     LOG_FAST_LOOP_INFO("ScanDataParser") << "Position " << readPosition << ": Next module size: " << numberOfBytesOfCurrentModule;
@@ -281,49 +408,17 @@ auto Parser::getSize(ByteView data) const -> std::optional<std::size_t>
       return std::nullopt;
     }
 
-    auto numberOfBytesOfNextModule = getNumberOfBytesOfNextModule(data.subview(readPosition), telegramHeader.telegramVersion);
+    auto numberOfBytesOfNextModule = getNumberOfBytesOfNextModule(data.subview(readPosition), telegramHeaderWireInfo.telegramVersion);
     if (!numberOfBytesOfNextModule.has_value())
     {
       return std::nullopt;
     }
 
-    readPosition += numberOfBytesOfCurrentModule;
+    readPosition                 = checkedAdd(readPosition, numberOfBytesOfCurrentModule);
     numberOfBytesOfCurrentModule = *numberOfBytesOfNextModule;
   }
 
-  return readPosition + sizeof(ScanData::checksum);
-}
-
-auto Parser::getNumberOfBytesOfNextModule(ByteView data, std::uint32_t version) -> std::optional<std::uint32_t>
-{
-  if (data.size() < kNumberOfRowsOffset + sizeof(Module::MetaData::numberOfRows))
-  {
-    return std::nullopt;
-  }
-  std::uint32_t numberOfRows = 0;
-  CompactParser::readValueUnsafe(data.subview(kNumberOfRowsOffset), numberOfRows);
-
-  auto nextModuleSizeOffset = static_cast<std::size_t>(
-    sizeof(Module::MetaData::segmentIndex) + sizeof(Module::MetaData::frameSequenceNumber) + sizeof(Module::MetaData::senderSerialNumber) +
-    sizeof(Module::MetaData::numberOfRows) + sizeof(Module::MetaData::numberOfColumns) + sizeof(Module::MetaData::numberOfEchoesPerBeam) +
-    numberOfRows * kModuleMetaDataSizePerRow
-  );
-  if (version == 4)
-  {
-    nextModuleSizeOffset += sizeof(Module::MetaData::distanceScalingFactor); // Only available in version 4
-  }
-  if (nextModuleSizeOffset > static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()))
-  {
-    throw std::invalid_argument("Next module size is too large, causing overflow.");
-  }
-  if (data.size() < nextModuleSizeOffset + sizeof(Module::MetaData::numberOfBytesOfNextModule))
-  {
-    return std::nullopt;
-  }
-
-  std::uint32_t numberOfBytesOfNextModule = 0;
-  CompactParser::readValueUnsafe(data.subview(nextModuleSizeOffset), numberOfBytesOfNextModule);
-  return numberOfBytesOfNextModule;
+  return checkedAdd(readPosition, compact::telegram::kChecksum.sizeInBytes);
 }
 
 } // namespace sick::compact::scan_data

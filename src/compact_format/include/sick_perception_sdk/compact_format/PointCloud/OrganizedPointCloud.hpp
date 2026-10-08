@@ -24,6 +24,11 @@ class OrganizedPointCloudBuilder;
  * @brief Data structure representing a multi-echo point cloud.
  *
  * This is a common transfer format for point clouds in the sick_perception_sdk.
+ *
+ * The sick_perception_sdk provides converters from Compact format representations that contain data convertible to point clouds
+ * into this point cloud structure.
+ *
+ * @see `sick::multiscan200::PointCloudConverter`
  * 
  * The order of fields in the raw data is defined by the order of `fields` in the point cloud.
  * The offset and datatype information for each field can be used to interpret the point data correctly.
@@ -32,7 +37,7 @@ class OrganizedPointCloudBuilder;
  * 
  * The point values are stored in a row-major order with all echoes of a point forming a tuple.
  * The first `width * numberOfEchoesPerBeam` points in `m_data` belong to the first row,
- * the second `width` points belong to the second row, and so on. 
+ * the second `width * numberOfEchoesPerBeam` points belong to the second row, and so on. 
  * 
  * An example is given below.
  * 
@@ -79,24 +84,22 @@ public:
   /**
    * @brief Returns the linear point index for grid coordinates.
    *
-   * Data is stored in row-major order: all columns and echoes for a row are stored
-   * before moving to the next row.
+   * Data is stored in row-major order with echoes innermost: a full row spans
+   * `width * numberOfEchoesPerBeam` points, and all echoes of a beam are contiguous.
    *
-   * @param column Column index (0 to numberOfColumns-1, where numberOfColumns = width / numberOfEchoesPerBeam).
+   * @param column Column index (0 to width-1).
    * @param row Row index (0 to height-1).
    * @param echoIndex Echo index (0 to numberOfEchoesPerBeam-1).
-   * @throws std::logic_error if the point cloud is unorganized.
    * @throws std::out_of_range if coordinates are out of bounds.
    */
   auto pointIndex(std::size_t column, std::size_t row, std::size_t echoIndex) const -> std::size_t
   {
-    auto const numberOfColumns = m_width / m_numberOfEchoesPerBeam;
-    if (column >= numberOfColumns || row >= m_height || echoIndex >= m_numberOfEchoesPerBeam)
+    if (column >= m_width || row >= m_height || echoIndex >= m_numberOfEchoesPerBeam)
     {
       throw std::out_of_range("Grid coordinates out of range");
     }
 
-    return row * m_width + column * m_numberOfEchoesPerBeam + echoIndex;
+    return (row * m_width + column) * m_numberOfEchoesPerBeam + echoIndex;
   }
 
 private:

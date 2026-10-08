@@ -2,11 +2,14 @@ cmake_minimum_required(VERSION 3.22)
 
 include(${CMAKE_SOURCE_DIR}/cmake/install-library.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/compiler-defines.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/compiler-warnings.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/clang-tidy.cmake)
 
 set(LIB_NAME "compact_format")
 add_library(${LIB_NAME})
 add_library(${PROJECT_NAME}::${LIB_NAME} ALIAS ${LIB_NAME})
+
+add_sdk_compiler_warnings(TARGET ${LIB_NAME})
 
 #===============================================================================
 # Configure zlib
@@ -28,27 +31,36 @@ if(ZLIB_FOUND)
   add_compile_definitions(USE_ZLIB_CRC32)
 else()
   if (TRY_TO_USE_ZLIB)
-    message(WARNING "${PROJECT_NAME}::${LIB_NAME}: ZLIB not found, using internal CRC32 implementation.")
+    message(WARNING "sick_perception_sdk: ${PROJECT_NAME}::${LIB_NAME}: ZLIB not found, using internal CRC32 implementation.")
   endif()
 endif()
 
 set(LIB_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/DataLoss/FrameSequenceNumberLossMonitor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/DataLoss/SegmentIndexLossMonitor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloud/OrganizedPointCloudBuilder.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloud/PointCloudAttributes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloud/PointCloudConfiguration.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloud/PointCloudToPcdConverter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloud/UnorganizedPointCloudBuilder.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_1_scan_data/FrameSequenceNumberLossMonitor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloud/UnorganizedPointCloudCollector.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_1_scan_data/DataLossMonitor.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_1_scan_data/PointCloudCollector.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_1_scan_data/PointCloudConverter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_1_scan_data/ScanData.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_1_scan_data/ScanDataParser.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_2_imu/ImuParser.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_2_imu_legacy/ImuLegacyParser.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_3_ambient_light/AmbientLightParser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_4_encoder/EncoderParser.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_6_multiScan200/DataLossMonitor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_6_multiScan200/MultiScan200Parser.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_6_multiScan200/PointCloudConverter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/telegram_type_7_imu/ImuParser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/CompactParser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Crc32Utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Crc32UtilsImpl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/StreamExtractor.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/WireInfo.cpp
 )
 
 target_sources(${LIB_NAME} PRIVATE ${LIB_SOURCES})
@@ -58,8 +70,6 @@ target_include_directories(${LIB_NAME} PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-find_package(plog REQUIRED)
-
 target_link_libraries(${LIB_NAME}
   PRIVATE
     $<$<BOOL:${ZLIB_FOUND}>:ZLIB::ZLIB>
@@ -68,11 +78,11 @@ target_link_libraries(${LIB_NAME}
 )
 
 target_enable_clang_tidy(
-  TARGET 
+  TARGET
     ${LIB_NAME}
   SOURCES
     ${LIB_SOURCES}
-  INCLUDE_DIRS 
+  INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
   LIBS
     $<$<BOOL:${ZLIB_FOUND}>:ZLIB::ZLIB>

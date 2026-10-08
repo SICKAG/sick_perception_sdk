@@ -31,26 +31,32 @@ class BitField
   static_assert(std::is_enum_v<EnumT>, "BitField requires an enum type");
 
 public:
+  using UnderlyingT = std::underlying_type_t<EnumT>;
+
   constexpr BitField()
-    : m_value {static_cast<EnumT>(0)}
+    : m_value {static_cast<UnderlyingT>(0)}
   { }
 
   constexpr explicit BitField(EnumT value)
-    : m_value {value}
+    : m_value {static_cast<UnderlyingT>(value)}
   { }
 
   constexpr explicit BitField(std::underlying_type_t<EnumT> value)
-    : m_value {static_cast<EnumT>(value)}
+    : m_value {value}
+  { }
+
+  constexpr explicit BitField(unsigned value)
+    : m_value {static_cast<UnderlyingT>(value)}
   { }
 
   constexpr auto isEmpty() const -> bool
   {
-    return m_value == static_cast<EnumT>(0);
+    return m_value == 0;
   }
 
   constexpr auto isSet(EnumT mask) const -> bool
   {
-    return static_cast<std::underlying_type_t<EnumT>>(m_value & mask) == static_cast<std::underlying_type_t<EnumT>>(mask);
+    return (m_value & static_cast<UnderlyingT>(mask)) == static_cast<UnderlyingT>(mask);
   }
 
   constexpr auto isSet(BitField<EnumT> const& mask) const -> bool
@@ -60,7 +66,7 @@ public:
 
   constexpr auto isUnset(EnumT mask) const -> bool
   {
-    return static_cast<std::underlying_type_t<EnumT>>(m_value & mask) == 0;
+    return (m_value & static_cast<UnderlyingT>(mask)) == 0;
   }
 
   constexpr auto isUnset(BitField<EnumT> const& mask) const -> bool
@@ -70,21 +76,43 @@ public:
 
   constexpr void set(EnumT mask)
   {
-    m_value = m_value | mask;
+    m_value = m_value | static_cast<UnderlyingT>(mask);
+  }
+
+  constexpr void set(EnumT mask, bool value)
+  {
+    if (value)
+    {
+      set(mask);
+    }
+    else
+    {
+      unset(mask);
+    }
   }
 
   constexpr void unset(EnumT mask)
   {
-    m_value = static_cast<EnumT>(static_cast<std::underlying_type_t<EnumT>>(m_value) & ~static_cast<std::underlying_type_t<EnumT>>(mask));
+    m_value = m_value & ~static_cast<UnderlyingT>(mask);
   }
 
-  constexpr auto value() const -> EnumT
+  constexpr auto underlyingValue() const -> UnderlyingT
   {
-    return m_value;
+    return static_cast<UnderlyingT>(m_value);
+  }
+
+  constexpr auto operator==(BitField const& other) const -> bool
+  {
+    return m_value == other.m_value;
+  }
+
+  constexpr auto operator!=(BitField const& other) const -> bool
+  {
+    return m_value != other.m_value;
   }
 
 private:
-  EnumT m_value;
+  UnderlyingT m_value;
 };
 
 } // namespace sick

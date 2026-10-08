@@ -26,7 +26,7 @@ public:
     : m_limits(std::nullopt)
   { }
 
-  explicit Interval(T min, T max, bool invert)
+  explicit Interval(T min, T max, bool invert = false)
     : m_limits(std::make_pair(min, max))
     , m_invert(invert)
   { }
@@ -48,7 +48,7 @@ public:
   }
 
   /**
-   * @brief Check if the range is empty, i.e. there is a value that can be in the range.
+   * @brief Check if the range is empty, i.e. there is no value that can be in the range.
    * 
    * If the range is not configured (both min and max are not set) it is considered empty.
    */

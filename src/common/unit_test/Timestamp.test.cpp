@@ -8,6 +8,8 @@ SPDX-License-Identifier: MIT
 
 #include <gtest/gtest.h>
 
+#include <sstream>
+
 TEST(TimestampTest, fromMicrosecondsSinceEpoch_stores_value_correctly)
 {
   auto const timestamp = sick::Timestamp::fromMicrosecondsSinceEpoch(42);
@@ -72,8 +74,10 @@ TEST(TimestampTest, default_construction_is_zero)
   EXPECT_EQ(timestamp.microsecondsSinceEpoch(), 0);
 }
 
-TEST(TimestampTest, to_string_returns_value_with_unit)
+TEST(TimestampTest, stream_operator_writes_value_with_unit)
 {
   auto const timestamp = sick::Timestamp::fromMicrosecondsSinceEpoch(1000000);
-  EXPECT_EQ(std::to_string(timestamp), "1000000 microseconds since epoch");
+  std::ostringstream stream;
+  stream << timestamp;
+  EXPECT_EQ(stream.str(), "1000000 microseconds since epoch");
 }

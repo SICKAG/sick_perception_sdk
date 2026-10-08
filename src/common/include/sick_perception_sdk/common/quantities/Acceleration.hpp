@@ -48,10 +48,3 @@ private:
 auto SDK_EXPORT operator<<(std::ostream& stream, Acceleration const& acceleration) -> std::ostream&;
 
 } // namespace sick
-
-namespace std {
-
-// NOLINTNEXTLINE(readability-identifier-naming): to_string is standard library style
-auto SDK_EXPORT to_string(sick::Acceleration const& acceleration) -> std::string;
-
-} // namespace std

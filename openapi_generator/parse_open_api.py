@@ -5,11 +5,12 @@ from tabulate import tabulate
 from typing import Any, Dict, List, Optional, Tuple
 import os
 import glob
+import re
 import yaml
 
 from objects import DeviceMetadata, EndpointDescription
 from parser import parse_path
-from generator import generate_code, generate_aggregate_headers
+from generator import clean_generated_files, generate_code, generate_endpoints, generate_sources_manifest
 from table_generator import generate_configuration_table
 
 
@@ -119,6 +120,10 @@ def parse_openapi_file(filename: str, metadata: DeviceMetadata, config_path: Opt
     spec: Dict[str, Any] = parser.specification  # type: ignore
     device_version = spec["info"]["version"]
 
+    # The version is used verbatim for namespaces, directories and file names, so it must be a plain MAJOR.MINOR.PATCH triple.
+    if not isinstance(device_version, str) or not re.fullmatch(r"\d+\.\d+\.\d+", device_version):
+        raise Exception(f"OpenAPI specification '{filename}' specifies 'info/version' as '{device_version}', which is not a valid version. Expected exactly three numeric parts, e.g. '2.4.4'.")
+
     # Update metadata with actual version from YAML
     metadata = DeviceMetadata(family=metadata.family, device_type=metadata.device_type, version=device_version)
     print(f"ℹ️  Device '{metadata.device_type}' version '{device_version}'.")
@@ -191,7 +196,7 @@ if __name__ == "__main__":
         print(f"\nℹ️  Summary for {desc}:")
         headers = ["path", "has GET response", "has POST request", "has POST response", "is SOPAS method"]
         lines = []
-        for endpoint in endpoint_descriptions:
+        for endpoint in sorted(endpoint_descriptions, key=lambda e: e.path):
             has_get_response = "🟢" if endpoint.get is not None and endpoint.get.response_payload is not None else "⚪"
             has_post_request = "🟢" if endpoint.post is not None and endpoint.post.request_payload is not None else "⚪"
             has_post_response = "🟢" if endpoint.post is not None and endpoint.post.response_payload is not None else "⚪"
@@ -205,18 +210,19 @@ if __name__ == "__main__":
 
     # Now that the payloads have been collected we can proceed to generating the C++ code and table.
     if not args.dry_run:
+        # Remove previously generated files so stale output does not linger.
+        clean_generated_files()
+
         # Generate C++ code for each device/version
         for endpoint_descriptions, metadata in all_endpoints:
             generate_code(endpoint_descriptions, metadata)
+            generate_endpoints(endpoint_descriptions, metadata)
 
-        # Generate aggregate headers (variant/family headers with latest alias)
-        generate_aggregate_headers(all_endpoints)
+        # Generate the CMake manifest listing every generated Endpoints .cpp file.
+        generate_sources_manifest(all_endpoints)
 
         # Generate configuration overview table
-        device_data = {
-            metadata: endpoint_descriptions
-            for endpoint_descriptions, metadata in all_endpoints
-        }
+        device_data = {metadata: endpoint_descriptions for endpoint_descriptions, metadata in all_endpoints}
         generate_configuration_table(device_data)
     else:
         print(f"\nℹ️  Skipping output generation because dry run was specified.")

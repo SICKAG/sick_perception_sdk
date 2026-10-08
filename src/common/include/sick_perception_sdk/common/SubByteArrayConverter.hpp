@@ -6,6 +6,7 @@ SPDX-License-Identifier: MIT
 #pragma once
 
 #include <sick_perception_sdk/common/ByteView.hpp>
+#include <sick_perception_sdk/common/CheckedMath.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -14,6 +15,9 @@ SPDX-License-Identifier: MIT
 #include <vector>
 
 namespace sick {
+
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic): Pointer arithmetic is necessary here for efficient reading of the compact data.
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Numbers are obvious in their respective context.
 
 /**
  * @brief Converts an array of sub-byte sized integers to a vector of larger integers.
@@ -49,7 +53,11 @@ auto convertSubByteArray(ByteView data, std::size_t numberOfSourceElements, std:
   if constexpr (sizeof(TargetT) == SourceTypeSizeInBits / bitsPerByte)
   {
     // If the source type size in bits corresponds to a whole number of bytes, we can directly copy the data
-    std::size_t totalBytes = sizeof(TargetT) * numberOfSourceElements;
+    std::size_t const totalBytes = checkedMultiply(sizeof(TargetT), numberOfSourceElements);
+    if (totalBytes > data.size())
+    {
+      throw std::invalid_argument("Not enough data to read all source elements");
+    }
     result.resize(numberOfSourceElements);
     std::memcpy(result.data(), data.data(), totalBytes);
     return totalBytes;
@@ -60,16 +68,23 @@ auto convertSubByteArray(ByteView data, std::size_t numberOfSourceElements, std:
     // Pattern: every 3 bytes contain 2x 12-bit values
     // byte0 byte1 byte2 → value0 = byte0 | (byte1 & 0x0F) << 8
     //                     value1 = (byte1 >> 4) | byte2 << 4
-    std::size_t const totalNumberOfBits         = numberOfSourceElements * 12;
+    std::size_t const totalNumberOfBits         = checkedMultiply(numberOfSourceElements, std::size_t {12});
     std::size_t const totalNumberOfBytes        = (totalNumberOfBits + bitsPerByte - 1) / bitsPerByte;
     std::size_t const numberOfInputElementPairs = numberOfSourceElements / 2;
     bool const hasOddElement                    = (numberOfSourceElements % 2) != 0;
+
+    if (totalNumberOfBytes > data.size())
+    {
+      throw std::invalid_argument("Not enough data to read all source elements");
+    }
 
     result.resize(numberOfSourceElements);
     auto* outputPtr      = result.data();
     auto const* inputPtr = data.data();
 
-    // AXIVION Single Disable CertC++-EXP34 : inputPtr is checked above, outputPtr is != nullptr after resize with numberOfSourceElements > 0.
+    // AXIVION Disable CertC++-EXP34: inputPtr is checked above, outputPtr is obtained fresh after resize() so no stale pointers exist.
+    // AXIVION Disable CertC++-MEM30: inputPtr is checked above, outputPtr is obtained fresh after resize() so no stale pointers exist.
+    // AXIVION Disable CertC++-MEM50: inputPtr is checked above, outputPtr is obtained fresh after resize() so no stale pointers exist.
 
     // Process pairs of 12-bit values (3 bytes → 2 values)
     for (std::size_t i = 0; i < numberOfInputElementPairs; ++i)
@@ -93,59 +108,86 @@ auto convertSubByteArray(ByteView data, std::size_t numberOfSourceElements, std:
       outputPtr[0]     = static_cast<TargetT>(byte0 | ((byte1 & 0x0Fu) << 8u));
     }
 
-    // AXIVION Single Enable CertC++-EXP34
+    // AXIVION Enable CertC++-EXP34
+    // AXIVION Enable CertC++-MEM30
+    // AXIVION Enable CertC++-MEM50
 
     return totalNumberOfBytes;
   }
-
-  result.clear();
-  result.reserve(numberOfSourceElements);
-
-  std::size_t bitOffset = 0;
-  for (std::size_t i = 0; i < numberOfSourceElements; ++i)
+  else
   {
-    TargetT value = 0;
+    result.clear();
+    result.reserve(numberOfSourceElements);
 
-    // Calculate byte position and bit position within that byte
-    std::size_t byteIndex = bitOffset / bitsPerByte;
-    std::size_t bitInByte = bitOffset % bitsPerByte;
-
-    // Extract bits that may span multiple bytes
-    std::size_t bitsRemaining     = SourceTypeSizeInBits;
-    std::size_t targetBitPosition = 0;
-
-    while (bitsRemaining > 0)
+    std::size_t bitOffset = 0;
+    for (std::size_t i = 0; i < numberOfSourceElements; ++i)
     {
-      if (byteIndex >= data.size())
+      TargetT value = 0;
+
+      // Calculate byte position and bit position within that byte
+      std::size_t byteIndex = bitOffset / bitsPerByte;
+      std::size_t bitInByte = bitOffset % bitsPerByte;
+
+      // Extract bits that may span multiple bytes
+      std::size_t bitsRemaining     = SourceTypeSizeInBits;
+      std::size_t targetBitPosition = 0;
+
+      while (bitsRemaining > 0)
       {
-        throw std::invalid_argument("Not enough data to read all source elements");
+        if (byteIndex >= data.size())
+        {
+          throw std::invalid_argument("Not enough data to read all source elements");
+        }
+
+        auto const currentByte          = data[byteIndex];
+        std::size_t const bitsToExtract = std::min(bitsRemaining, bitsPerByte - bitInByte);
+
+        // Extract bits from current byte
+        auto const mask          = static_cast<std::uint8_t>(((1u << bitsToExtract) - 1u) << bitInByte);
+        auto const extractedBits = static_cast<std::uint8_t>((currentByte & mask) >> bitInByte);
+
+        // Place extracted bits in target value
+        value |= static_cast<TargetT>(extractedBits) << targetBitPosition;
+
+        bitsRemaining -= bitsToExtract;
+        targetBitPosition += bitsToExtract;
+        byteIndex++;
+        bitInByte = 0;
       }
 
-      auto const currentByte          = data[byteIndex];
-      std::size_t const bitsToExtract = std::min(bitsRemaining, bitsPerByte - bitInByte);
-
-      // Extract bits from current byte
-      auto const mask          = static_cast<std::uint8_t>(((1u << bitsToExtract) - 1u) << bitInByte);
-      auto const extractedBits = static_cast<std::uint8_t>((currentByte & mask) >> bitInByte);
-
-      // Place extracted bits in target value
-      value |= static_cast<TargetT>(extractedBits) << targetBitPosition;
-
-      bitsRemaining -= bitsToExtract;
-      targetBitPosition += bitsToExtract;
-      byteIndex++;
-      bitInByte = 0;
+      result.push_back(value);
+      bitOffset += SourceTypeSizeInBits;
     }
 
-    result.push_back(value);
-    bitOffset += SourceTypeSizeInBits;
+    // Calculate total bytes read (rounded up since data is byte-aligned)
+    std::size_t const totalNumberOfBits  = checkedMultiply(numberOfSourceElements, SourceTypeSizeInBits);
+    std::size_t const totalNumberOfBytes = (totalNumberOfBits + bitsPerByte - 1) / bitsPerByte; // Round up to next byte
+
+    return totalNumberOfBytes;
   }
+}
 
-  // Calculate total bytes read (rounded up since data is byte-aligned)
-  std::size_t const totalNumberOfBits  = numberOfSourceElements * SourceTypeSizeInBits;
+/**
+ * @brief Calculates the size in bytes of a subbyte array.
+ *
+ * This function calculates the size in bytes required to store a given number of
+ * sub-byte sized integers. If the last element doesn't end on a byte boundary,
+ * the size is rounded up to the next whole byte.
+ *
+ * @tparam SourceTypeSizeInBits The size of each source integer in bits
+ *
+ * @param numberOfSourceElements Number of source elements to extract
+ */
+template <std::size_t SourceTypeSizeInBits>
+auto sizeOfSubByteArray(std::size_t numberOfSourceElements) -> std::size_t
+{
+  constexpr std::size_t bitsPerByte    = 8;
+  std::size_t const totalNumberOfBits  = checkedMultiply(numberOfSourceElements, SourceTypeSizeInBits);
   std::size_t const totalNumberOfBytes = (totalNumberOfBits + bitsPerByte - 1) / bitsPerByte; // Round up to next byte
-
   return totalNumberOfBytes;
 }
+
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
 } // namespace sick

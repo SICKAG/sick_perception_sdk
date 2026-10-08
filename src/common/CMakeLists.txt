@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 include(${CMAKE_SOURCE_DIR}/cmake/install-library.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/compiler-defines.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/compiler-warnings.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/clang-tidy.cmake)
 
 set(LIB_NAME "common")
@@ -9,8 +10,11 @@ set(LIB_NAME "common")
 add_library(${LIB_NAME})
 add_library(${PROJECT_NAME}::${LIB_NAME} ALIAS ${LIB_NAME})
 
+add_sdk_compiler_warnings(TARGET ${LIB_NAME})
+
 set(LIB_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/IpV4Address.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/loadBinaryFile.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/logging/plog/CustomFormatter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/logging/plog/logging.plog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/quantities/Acceleration.cpp

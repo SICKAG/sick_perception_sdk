@@ -31,12 +31,12 @@ public:
   static constexpr std::chrono::milliseconds kDefaultNewDataTimeout {1000};
 
   explicit TcpStreamReceiver(typename BaseT::ErrorCallback onError, std::string loggerName)
-    : BaseT(onError, loggerName)
+    : BaseT(std::move(onError), std::move(loggerName))
   { }
 
   auto setup(
-    DataCallback dataCallback,
-    IpV4Address const& deviceAddress,
+    DataCallback const& dataCallback,
+    IpV4Address const& sensorAddress,
     std::uint16_t sensorPort,
     std::chrono::milliseconds firstDataTimeout = BaseT::kDefaultFirstDataTimeout,
     std::chrono::milliseconds newDataTimeout   = BaseT::kDefaultNewDataTimeout,
@@ -45,11 +45,11 @@ public:
   {
     this->logSetupWhileRunning();
 
-    std::string const streamName = this->m_loggerName + " " + deviceAddress.toString() + ":" + std::to_string(sensorPort);
+    std::string const streamName = this->m_loggerName + " " + sensorAddress.toString() + ":" + std::to_string(sensorPort);
     auto const errorCallback     = this->m_onError;
 
     this->m_streamFactory = [=]() -> std::unique_ptr<ThreadT> {
-      return std::make_unique<ThreadT>(deviceAddress, sensorPort, receiveBufferSize, dataCallback, errorCallback, firstDataTimeout, newDataTimeout, streamName);
+      return std::make_unique<ThreadT>(sensorAddress, sensorPort, receiveBufferSize, dataCallback, errorCallback, firstDataTimeout, newDataTimeout, streamName);
     };
 
     return *this;

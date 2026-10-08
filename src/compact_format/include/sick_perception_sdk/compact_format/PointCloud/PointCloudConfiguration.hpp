@@ -5,6 +5,7 @@ SPDX-License-Identifier: MIT
 
 #pragma once
 
+#include <sick_perception_sdk/common/BitField.hpp>
 #include <sick_perception_sdk/common/Interval.hpp>
 #include <sick_perception_sdk/common/export.hpp>
 #include <sick_perception_sdk/common/quantities/Angle.hpp>
@@ -29,10 +30,10 @@ struct SDK_EXPORT PointCloudConfiguration
     bool enableIntensity   = false;
     bool enableTimeOffset  = false;
     bool enableRing        = false;
-    bool enableLayerId     = false;
+    bool enableLayerIndex  = false;
+    bool enableColumnIndex = false;
     bool enableEchoIndex   = false;
-    bool enableIsReflector = false;
-    bool enableHasBlooming = false;
+    bool enableProperties  = false;
     bool enablePulseWidth  = false;
 
     auto toString() const -> std::string;
@@ -48,21 +49,22 @@ struct SDK_EXPORT PointCloudConfiguration
     std::optional<std::set<std::size_t>> selectedEchos;
 
     /**
-     * @brief The indices of the layers that shall be included in the point cloud. The first layer has index 1.
-     * If not set, all layers are included. The layer selection filter is applied in addition to the vertical angle
-     * filter. A layer is included in the point cloud if it is selected by the layer filter and angle range filter.
+     * @brief The indices of the layers that shall be included in the point cloud. The first layer has index 0.
+     * If not set, all layers are included. The layer selection filter is applied in addition to the elevation angle
+     * filter. A layer is included in the point cloud if it is selected by the layer filter and elevation angle range filter.
      */
     std::optional<std::set<std::uint32_t>> selectedLayers;
 
     /**
-     * @brief A filter for the vertical angle of the points in the point cloud. The angle is in radians. The vertical
-     * angle filter is applied in addition to the layer selection filter. A layer is included in the point cloud if it
-     * is selected by the layer filter and angle range filter.
+     * @brief A filter for the horizontal angle of the points in the point cloud. The angle is in radians.
+     * The azimuth filter is applied independently of the layer selection filter.
      */
     Interval<Angle> azimuth;
 
     /**
-     * @brief A filter for the horizontal angle of the points in the point cloud. The angle is in radians.
+     * @brief A filter for the vertical angle of the points in the point cloud. The angle is in radians. The elevation
+     * angle filter is applied in addition to the layer selection filter. A layer is included in the point cloud if it
+     * is selected by the layer filter and elevation angle range filter.
      */
     Interval<Angle> elevation;
 
@@ -78,15 +80,10 @@ struct SDK_EXPORT PointCloudConfiguration
     Interval<float> intensity;
 
     /**
-     * @brief Set to true to only include points that are marked as reflector in the point cloud. Set to false to only
-     * include points that are not marked as reflector. Set to nullopt to include all points
+     * @brief Only points with the specified properties pattern are included in the point cloud. Set and unset bits are 
+     * taken into account. Set to nullopt to include all points.
      */
-    std::optional<bool> requiredReflectorFlag;
-
-    /** @brief Set to true to only include points that are marked as blooming in the point cloud. Set to false to only
-     * include points that are not marked as blooming. Set to nullopt to include all points
-     */
-    std::optional<bool> requiredBloomingFlag;
+    std::optional<BitField<Properties>> requiredProperties;
 
     auto toString() const -> std::string;
   };

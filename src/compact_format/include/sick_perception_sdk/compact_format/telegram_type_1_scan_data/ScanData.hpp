@@ -14,7 +14,6 @@ SPDX-License-Identifier: MIT
 
 #include <cstdint>
 #include <limits>
-#include <type_traits>
 #include <vector>
 
 /**
@@ -22,7 +21,7 @@ SPDX-License-Identifier: MIT
  */
 namespace sick::compact::scan_data {
 
-enum class EchoContent : std::uint8_t
+enum class EchoContent
 {
   None      = 0x00,
   Distance  = 0x01,
@@ -30,7 +29,7 @@ enum class EchoContent : std::uint8_t
   All       = Distance | Intensity,
 };
 
-enum class BeamContent : std::uint8_t
+enum class BeamContent
 {
   None       = 0x00,
   Properties = 0x01,
@@ -38,23 +37,23 @@ enum class BeamContent : std::uint8_t
   All        = Properties | Azimuth,
 };
 
-#pragma pack(push, 1) // add pragma to prevent the compiler from adding padding bytes for alignment
-
-struct SDK_EXPORT Echo
+enum class BeamProperties
 {
-  Distance distance;
-  float intensity {std::numeric_limits<float>::quiet_NaN()};
+  Reserved      = 0x00,
+  Reflector     = 0x01,
+  BloomingEcho0 = 0x20,
+  BloomingEcho1 = 0x40,
+  BloomingEcho2 = 0x80
 };
 
-struct SDK_EXPORT Beam
-{
-  std::vector<Echo> echoes;
-  std::uint8_t properties {0};
-  Angle azimuth;
-};
+// NOLINTBEGIN(misc-non-private-member-variables-in-classes)
 
-using Column = std::vector<Beam>;
-
+/**
+ * @brief Flat data structure for a single scan data module (Structure-of-Arrays layout).
+ *
+ * All echo data is stored in contiguous flat vectors for good cache locality.
+ * Index into arrays with: columnIndex * (numberOfRows * numberOfEchoesPerBeam) + rowIndex * numberOfEchoesPerBeam + echoIndex
+ */
 struct SDK_EXPORT Module
 {
   struct SDK_EXPORT RowMetaData
@@ -66,32 +65,49 @@ struct SDK_EXPORT Module
     Angle lastBeamAzimuth;
   };
 
-  struct SDK_EXPORT MetaData
-  {
-    std::uint64_t segmentIndex {0};
-    std::uint64_t frameSequenceNumber {0};
-    std::uint32_t senderSerialNumber {0};
-    std::uint32_t numberOfRows {0};
-    std::uint32_t numberOfColumns {0};
-    std::uint32_t numberOfEchoesPerBeam {0};
-    std::vector<RowMetaData> rowMetaData;
-    float distanceScalingFactor {std::numeric_limits<float>::quiet_NaN()};
-    std::uint32_t numberOfBytesOfNextModule {0};
-    BitField<EchoContent> echoContent {EchoContent::None};
-    BitField<BeamContent> beamContent {BeamContent::None};
-  };
+  std::size_t numberOfColumns {0};
+  std::size_t numberOfEchoesPerBeam {0};
+  std::vector<RowMetaData> rowMetaData;
 
-  MetaData metaData;
-  std::vector<Column> columns;
+  std::vector<Distance> distances;                      ///< Flat array of all distance samples (empty if not present)
+  std::vector<float> intensities;                       ///< Flat array of all intensity samples (empty if not present)
+  std::vector<BitField<BeamProperties>> beamProperties; ///< Flat array of all beam properties (empty if not present)
+  std::vector<Angle> beamAzimuths;                      ///< Flat array of all beam azimuths (empty if not present)
 };
 
 struct SDK_EXPORT ScanData
 {
   TelegramHeader telegramHeader;
+  std::size_t frameSequenceNumber {0};
+  std::size_t segmentIndex {0};
   std::vector<Module> modules;
-  std::uint32_t checksum {0};
 };
 
-#pragma pack(pop)
+// NOLINTEND(misc-non-private-member-variables-in-classes)
+
+/**
+ * @brief Compute the flat index for a data sample given echo, column, and row inside a module.
+ *
+ * @param columnIndex The column index (0 to numberOfColumns-1).
+ * @param rowIndex The row index (0 to numberOfRows-1).
+ * @param echoIndex The echo index (  0 to numberOfEchoesPerBeam-1).
+ * @return The flat index into the echo data arrays (distances, intensities).
+ */
+auto SDK_EXPORT computeSampleIndex(Module const& module, std::size_t columnIndex, std::size_t rowIndex, std::size_t echoIndex) -> std::size_t;
+
+/**
+ * @brief Compute the flat index for beam data given column and row.
+ *
+ * @param columnIndex The column index (0 to numberOfColumns-1).
+ * @param rowIndex The row index (0 to numberOfRows-1).
+ * @return The flat index into the beam data arrays (beamProperties, beamAzimuths).
+ */
+auto SDK_EXPORT computeBeamIndex(Module const& module, std::size_t columnIndex, std::size_t rowIndex) -> std::size_t;
+
+// Convenience accessors for the flat-array data in Module.
+auto SDK_EXPORT getDistance(Module const& module, std::size_t columnIndex, std::size_t rowIndex, std::size_t echoIndex) -> Distance;
+auto SDK_EXPORT getIntensity(Module const& module, std::size_t columnIndex, std::size_t rowIndex, std::size_t echoIndex) -> float;
+auto SDK_EXPORT getBeamProperties(Module const& module, std::size_t columnIndex, std::size_t rowIndex) -> BitField<BeamProperties>;
+auto SDK_EXPORT getBeamAzimuth(Module const& module, std::size_t columnIndex, std::size_t rowIndex) -> Angle;
 
 } // namespace sick::compact::scan_data

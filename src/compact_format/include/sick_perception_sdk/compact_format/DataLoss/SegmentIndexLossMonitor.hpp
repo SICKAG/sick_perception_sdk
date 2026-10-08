@@ -7,7 +7,6 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/common/export.hpp>
 
-#include <cstdint>
 #include <functional>
 #include <optional>
 
@@ -16,7 +15,7 @@ namespace sick::compact {
 class SDK_EXPORT SegmentIndexLossMonitor
 {
 public:
-  explicit SegmentIndexLossMonitor(std::uint64_t expectedNumberOfSegmentsPerFrame);
+  explicit SegmentIndexLossMonitor(std::size_t expectedNumberOfSegmentsPerFrame);
   virtual ~SegmentIndexLossMonitor() = default;
 
   SegmentIndexLossMonitor(SegmentIndexLossMonitor const&)                    = default;
@@ -24,11 +23,11 @@ public:
   SegmentIndexLossMonitor(SegmentIndexLossMonitor&&)                         = default;
   auto operator=(SegmentIndexLossMonitor&&) -> SegmentIndexLossMonitor&      = default;
 
-  auto computeNumberOfMissingElements(std::uint64_t frameSequenceNumber, std::uint64_t segmentIndex) -> int;
+  auto computeNumberOfMissingElements(std::size_t frameSequenceNumber, std::size_t segmentIndex) -> int;
 
 private:
-  std::uint64_t m_expectedNumberOfSegmentsPerFrame;
-  std::optional<std::uint64_t> m_lastLinearSegmentIndex;
+  std::size_t m_expectedNumberOfSegmentsPerFrame;
+  std::optional<std::size_t> m_lastLinearSegmentIndex;
 };
 
 } // namespace sick::compact

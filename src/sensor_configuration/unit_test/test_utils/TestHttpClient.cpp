@@ -5,23 +5,35 @@ SPDX-License-Identifier: MIT
 
 #include "TestHttpClient.hpp"
 
+#include <stdexcept>
+#include <utility>
+
 namespace sick::test {
 
-auto TestHttpClient::get(std::string const& endpoint) const -> std::string
+auto TestHttpClient::send(HttpRequest const& request) const -> HttpResponse
 {
-  requestedGetEndpoints.push_back(endpoint);
-  auto response = getResponses.front();
-  getResponses.pop_front();
+  requests.push_back(request);
+  if (responses.empty())
+  {
+    throw std::runtime_error("TestHttpClient: no queued response for " + request.path);
+  }
+  auto response = responses.front();
+  responses.pop_front();
   return response;
 }
 
-auto TestHttpClient::post(std::string const& endpoint, std::string const& payload) const -> std::string
+void TestHttpClient::queueJsonResponse(std::string body) const
 {
-  requestedPostEndpoints.push_back(endpoint);
-  requestedPostPayloads.push_back(payload);
-  auto response = postResponses.front();
-  postResponses.pop_front();
-  return response;
+  queueResponse(200, std::move(body), "application/json");
+}
+
+void TestHttpClient::queueResponse(int statusCode, std::string body, std::string contentType) const
+{
+  HttpResponse response;
+  response.statusCode  = statusCode;
+  response.contentType = std::move(contentType);
+  response.body        = std::move(body);
+  responses.push_back(std::move(response));
 }
 
 } // namespace sick::test

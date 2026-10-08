@@ -5,6 +5,7 @@ SPDX-License-Identifier: MIT
 
 #pragma once
 
+#include <sick_perception_sdk/common/BitField.hpp>
 #include <sick_perception_sdk/common/export.hpp>
 #include <sick_perception_sdk/common/quantities/Timestamp.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/PointCloudAttributes.hpp>
@@ -27,6 +28,7 @@ namespace sick::point_cloud {
  * into this point cloud structure.
  *
  * @see `sick::compact::scan_data::PointCloudConverter`
+ * @see `sick::multiscan200::PointCloudConverter`
  * 
  * The order of fields in the raw data is defined by the order of `fields` in the point cloud.
  * The offset and datatype information for each field can be used to interpret the point data correctly.
@@ -39,11 +41,7 @@ public:
   template <typename PointCloudT>
   friend class PointCloudBuilder;
   friend class UnorganizedPointCloudBuilder;
-
-  auto density() const -> Density
-  {
-    return m_density;
-  }
+  friend class UnorganizedPointCloudCollector;
 
   auto fields() const -> std::vector<PointField> const&
   {
@@ -150,24 +148,24 @@ public:
     return getFieldValue<std::uint8_t>(PointField::FieldType::Ring, pointIndex);
   }
 
-  auto getLayer(std::size_t pointIndex) const -> std::uint8_t
+  auto getLayerIndex(std::size_t pointIndex) const -> std::uint8_t
   {
-    return getRing(pointIndex);
+    return getFieldValue<std::uint8_t>(PointField::FieldType::LayerIndex, pointIndex);
   }
 
-  auto getEcho(std::size_t pointIndex) const -> std::uint8_t
+  auto getColumnIndex(std::size_t pointIndex) const -> std::uint16_t
+  {
+    return getFieldValue<std::uint16_t>(PointField::FieldType::ColumnIndex, pointIndex);
+  }
+
+  auto getEchoIndex(std::size_t pointIndex) const -> std::uint8_t
   {
     return getFieldValue<std::uint8_t>(PointField::FieldType::EchoIndex, pointIndex);
   }
 
-  auto isReflector(std::size_t pointIndex) const -> bool
+  auto getProperties(std::size_t pointIndex) const -> BitField<Properties>
   {
-    return getFieldValue<bool>(PointField::FieldType::IsReflector, pointIndex);
-  }
-
-  auto hasBlooming(std::size_t pointIndex) const -> bool
-  {
-    return getFieldValue<bool>(PointField::FieldType::HasBlooming, pointIndex);
+    return BitField<Properties>(getFieldValue<BitField<Properties>::UnderlyingT>(PointField::FieldType::Properties, pointIndex));
   }
 
   auto getPulseWidth(std::size_t pointIndex) const -> float
@@ -177,7 +175,6 @@ public:
 
 protected:
   Timestamp m_timestamp = Timestamp::fromMicrosecondsSinceEpoch(0);
-  Density m_density     = Density::AllPointsValid;
   std::vector<PointField> m_fields;
   std::vector<int> m_fieldIndexesForFieldType; ///< Index in m_fields for each PointField::FieldType, -1 if field type is not present.
   std::uint32_t m_pointSizeBytes = 0;
@@ -261,7 +258,7 @@ protected:
       return static_cast<OutputT>(value);
     }
     default:
-      throw std::invalid_argument("Unsupported PointField::DataType");
+      throw std::invalid_argument("Unsupported PointField::DataType: " + PointField::dataTypeToString(runtimeType));
     }
     // NOLINTEND(cppcoreguidelines-init-variables)
   }
@@ -285,13 +282,13 @@ protected:
     auto const searchIndex = static_cast<std::size_t>(fieldType);
     if (searchIndex >= m_fieldIndexesForFieldType.size())
     {
-      throw std::out_of_range("Field type not found");
+      throw std::out_of_range("Field type not available: " + PointField::fieldTypeToString(fieldType));
     }
 
     auto const fieldIndex = m_fieldIndexesForFieldType[searchIndex];
     if (fieldIndex < 0)
     {
-      throw std::out_of_range("Field type not found");
+      throw std::out_of_range("Field type not available: " + PointField::fieldTypeToString(fieldType));
     }
 
     auto const& field = m_fields[fieldIndex];

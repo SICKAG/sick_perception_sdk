@@ -94,22 +94,24 @@ auto SDK_EXPORT operator<<(std::ostream& stream, Distance const& distance) -> st
 
 namespace literals {
 
-constexpr auto operator"" _m(long double value) -> Distance
+// NOLINTNEXTLINE(google-runtime-float): user-defined literals require a long double parameter
+constexpr auto operator""_m(long double value) -> Distance
 {
   return Distance::fromMeters(static_cast<Distance::value_type>(value));
 }
 
-constexpr auto operator"" _m(unsigned long long value) -> Distance
+constexpr auto operator""_m(unsigned long long value) -> Distance
 {
   return Distance::fromMeters(static_cast<Distance::value_type>(value));
 }
 
-constexpr auto operator"" _mm(long double value) -> Distance
+// NOLINTNEXTLINE(google-runtime-float): user-defined literals require a long double parameter
+constexpr auto operator""_mm(long double value) -> Distance
 {
   return Distance::fromMillimeters(static_cast<Distance::value_type>(value));
 }
 
-constexpr auto operator"" _mm(unsigned long long value) -> Distance
+constexpr auto operator""_mm(unsigned long long value) -> Distance
 {
   return Distance::fromMillimeters(static_cast<Distance::value_type>(value));
 }
@@ -117,12 +119,5 @@ constexpr auto operator"" _mm(unsigned long long value) -> Distance
 } // namespace literals
 
 } // namespace sick
-
-namespace std {
-
-// NOLINTNEXTLINE(readability-identifier-naming): to_string is standard library style
-auto SDK_EXPORT to_string(sick::Distance const& distance) -> std::string;
-
-} // namespace std
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)

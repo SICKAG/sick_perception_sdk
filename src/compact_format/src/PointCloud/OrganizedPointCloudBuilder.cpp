@@ -8,7 +8,7 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/quantities/Timestamp.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/OrganizedPointCloud.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/PointCloudAttributes.hpp>
-#include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
+#include <sick_perception_sdk/compact_format/PointCloud/PointCloudBuilder.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -43,9 +43,6 @@ OrganizedPointCloudBuilder::OrganizedPointCloudBuilder(
 void OrganizedPointCloudBuilder::writeInvalidPoint()
 {
   this->beginPoint();
-
-  // From now on the point cloud is marked as containing invalid points because there is a least one invalid point.
-  m_pointCloud.m_density = Density::InvalidPointsContained;
 
   for (auto const& field : m_pointCloud.m_fields)
   {

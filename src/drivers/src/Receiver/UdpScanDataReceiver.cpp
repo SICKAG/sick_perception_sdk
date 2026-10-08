@@ -5,6 +5,19 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/drivers/Receiver/UdpScanDataReceiver.hpp>
 
+#include <sick_perception_sdk/common/logging/logging.hpp>
+#include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
+#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/DataLossMonitor.hpp>
+#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/PointCloudConverter.hpp>
+#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanData.hpp>
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <string>
+#include <utility>
+
 namespace sick::compact {
 
 UdpScanDataReceiver::UdpScanDataReceiver(typename BaseT::ErrorCallback onError, std::string loggerName)
@@ -19,7 +32,7 @@ auto UdpScanDataReceiver::setup(
 ) -> UdpScanDataReceiver&
 {
   BaseT::setup(
-    [this](compact::scan_data::ScanData const& data) {
+    [this](compact::scan_data::ScanData const& data) -> void {
       this->multiplexScanData(data);
     },
     receiverPort,
@@ -44,7 +57,7 @@ void UdpScanDataReceiver::multiplexScanData(compact::scan_data::ScanData const& 
         callback(lossCounts);
       }
     }
-    catch (std::exception_ptr exception)
+    catch (std::exception_ptr const& exception)
     {
       m_onError(exception);
     }
@@ -60,15 +73,9 @@ void UdpScanDataReceiver::multiplexScanData(compact::scan_data::ScanData const& 
   }
   if (m_framePointCloud)
   {
-    if (scanData.modules.empty())
-    {
-      LOG_WARNING("picoScan100") << "Received segment with no modules. Cannot deduce the frame sequence number.";
-      return;
-    }
-
     if (!m_lastFrameSequenceNumber)
     {
-      m_lastFrameSequenceNumber = scanData.modules.front().metaData.frameSequenceNumber;
+      m_lastFrameSequenceNumber = scanData.frameSequenceNumber;
       return;
     }
 
@@ -76,13 +83,12 @@ void UdpScanDataReceiver::multiplexScanData(compact::scan_data::ScanData const& 
     auto& callback  = m_framePointCloud->second; // No structured bindings because captured in lambda below.
 
     auto collectScanData = [&]() -> void {
-      LOG_FAST_LOOP_INFO("picoScan100") << "Collecting segment with number " << scanData.modules.front().metaData.segmentIndex << " from frame "
-                                        << scanData.modules.front().metaData.frameSequenceNumber << ".";
+      LOG_FAST_LOOP_INFO("picoScan100") << "Collecting segment with number " << scanData.segmentIndex << " from frame " << scanData.frameSequenceNumber << ".";
       collector.collect(scanData);
     };
 
-    bool const frameChanged   = (*m_lastFrameSequenceNumber != scanData.modules.front().metaData.frameSequenceNumber);
-    m_lastFrameSequenceNumber = scanData.modules.front().metaData.frameSequenceNumber;
+    bool const frameChanged   = (*m_lastFrameSequenceNumber != scanData.frameSequenceNumber);
+    m_lastFrameSequenceNumber = scanData.frameSequenceNumber;
 
     if (!m_firstFrameChangeDetected && frameChanged)
     {

@@ -14,9 +14,11 @@ Checks: >
   performance-*,
   readability-*,
   -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
   -cppcoreguidelines-use-default-member-init,
   -google-readability-namespace-comments,
+  -misc-non-private-member-variables-in-classes,
   -modernize-use-default-member-init,
   -modernize-use-nodiscard,
   -performance-enum-size,
@@ -25,6 +27,7 @@ Checks: >
   -readability-named-parameter,
   -readability-redundant-member-init,
   -readability-uppercase-literal-suffix,
+  -readability-static-accessed-through-instance,
 
 # Turn all the warnings from the checks above into errors.
 WarningsAsErrors: >
@@ -46,6 +49,10 @@ CheckOptions:
   - { key: readability-identifier-naming.MemberCase, value: camelBack }
   - { key: readability-identifier-naming.MethodCase, value: camelBack }
   - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
+  - {
+      key: readability-identifier-naming.NamespaceIgnoredRegexp,
+      value: "LRS4000|multiScan100|multiScan200|picoScan100",
+    }
   - { key: readability-identifier-naming.ParameterCase, value: camelBack }
   - { key: readability-identifier-naming.PrivateMemberPrefix, value: m_ }
   - { key: readability-identifier-naming.ProtectedMemberPrefix, value: m_ }

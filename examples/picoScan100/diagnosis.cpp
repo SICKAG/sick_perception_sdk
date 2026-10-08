@@ -13,11 +13,13 @@ SPDX-License-Identifier: MIT
 
 #include <chrono>
 #include <iostream>
+#include <mutex>
 #include <thread>
 
 using namespace sick::literals;
 using namespace std::chrono_literals;
-using LossCounts = sick::compact::scan_data::DataLossMonitor::LossCounts;
+
+std::mutex output_mutex;
 
 std::uint8_t numberOfScans = 0;
 
@@ -26,13 +28,15 @@ void onNewScanData(sick::compact::scan_data::ScanData const& data)
   numberOfScans++;
   if (numberOfScans == 100)
   {
+    std::lock_guard<std::mutex> lock(output_mutex);
     std::cout << "Received scan data with telegram sequence number: " << data.telegramHeader.telegramSequenceNumber << '\n';
     numberOfScans = 0;
   }
 }
 
-void onDataLoss(LossCounts const& lossCounts)
+void onDataLoss(sick::compact::LossCounts const& lossCounts)
 {
+  std::lock_guard<std::mutex> lock(output_mutex);
   std::cout << "Data losses detected: lost telegrams=" << lossCounts.numberOfLostTelegrams << ", lost frames=" << lossCounts.numberOfLostFrames
             << ", lost segments=" << lossCounts.numberOfLostSegments << '\n';
 }
@@ -40,34 +44,45 @@ void onDataLoss(LossCounts const& lossCounts)
 int main(int argc, char* argv[])
 {
   sick::examples::printSdkVersion();
-  auto const deviceAddress = sick::examples::getDeviceAddress(argc, argv);
+
+  sick::IpV4Address udpReceiverAddress {"192.168.0.100"};
+  std::uint16_t scanDataPort = 2115;
+  auto const sensorAddress   = sick::examples::getSensorAddress("picoScan100 diagnosis example", argc, argv, [&](CLI::App& app) {
+    app
+      .add_option("--receiver_address", udpReceiverAddress, "IP address of the computer to which the sensor should send UDP data.") //
+      ->default_val(udpReceiverAddress.toString())                                                                                  //
+      ->check(CLI::ValidIPV4);
+    app
+      .add_option("--scan_data_port", scanDataPort, "UDP port on the computer to which the sensor should send scan data.") //
+      ->default_val(scanDataPort);
+  });
 
   sick::Log::init(sick::LogLevel::Info);
 
-  auto const httpClient = std::make_shared<sick::httplib_client::HttpClient>(deviceAddress, 80);
+  auto const httpClient = std::make_shared<sick::httplib_client::HttpClient>(sensorAddress.address, sensorAddress.restApiPort);
 
   // Change the default passwords during initial commissioning to secure your device.
   // Passwords can be updated via the web browser or API.
   // For production use, store passwords in a secure vault rather than in plain text.
-  sick::picoScan150::v2_2_1_0R::Configurator configurator(httpClient, sick::UserLevel::Service, "servicelevel");
+  sick::picoScan150::v2_3_3::Configurator configurator(httpClient, sick::UserLevel::Service, "servicelevel");
 
   try
   {
-    std::cout << "Diagnosis for device at " << configurator.sensorIPAddress.get().toString() << '\n';
-    std::cout << "You can find a diagnosis overview at: http://" + configurator.sensorIPAddress.get().toString() + "/#/diagnosis/overview\n";
-    std::cout << "DeviceType:      " << configurator.deviceType.get() << '\n';
-    std::cout << "DeviceState:     " << static_cast<int>(configurator.deviceState.get()) << '\n';
-    std::cout << "FirmwareVersion: " << configurator.firmwareVersion.get() << '\n';
-    std::cout << "LocationName:    " << configurator.locationName.get() << '\n';
-    std::cout << "OrderNumber:     " << configurator.orderNumber.get() << '\n';
-    std::cout << "SerialNumber:    " << configurator.serialNumber.get() << '\n';
-    std::cout << "SystemTime:      " << configurator.systemTime.get().count() << " us since epoch\n";
+    auto const sensorAddress = sick::IpV4Address(configurator.getEtherIPAddress());
+    std::cout << "Diagnosis for device at " << sensorAddress << '\n';
+    std::cout << "You can find a diagnosis overview at: http://" << sensorAddress << "/#/diagnosis/overview\n";
+    std::cout << "DeviceType:      " << configurator.getDeviceType() << '\n';
+    std::cout << "FirmwareVersion: " << configurator.getFirmwareVersion() << '\n';
+    std::cout << "LocationName:    " << configurator.getLocationName() << '\n';
+    std::cout << "OrderNumber:     " << configurator.getOrderNumber() << '\n';
+    std::cout << "SerialNumber:    " << configurator.getSerialNumber() << '\n';
+    std::cout << "SystemTime:      " << configurator.getSystemTimeOfSensor().microsecondsSinceEpoch() << " us since epoch\n";
 
     std::cout << "Blinking the device LEDs for identification...\n";
-    configurator.findMe(5_s);
+    configurator.findMe(5); // Blink for 5 seconds
 
     std::cout << "Configuring scan data streaming...\n";
-    configurator.enableScanDataStreaming("192.168.0.100", 2115); // Enter your computer's IP address
+    configurator.enableScanDataStreamingCompactUdp(udpReceiverAddress, scanDataPort);
   }
   catch (std::exception const& exception)
   {
@@ -81,10 +96,14 @@ int main(int argc, char* argv[])
     {
       try
       {
-        std::cout << "DeviceState: " << static_cast<int>(configurator.deviceState.get()) << '\n';
-        std::cout << "Temperature: " << configurator.sensorTemperature.get() << '\n';
+        auto const deviceState       = static_cast<int>(configurator.getDeviceStatus());
+        auto const temperature       = configurator.getCurrentTempDev();
+        auto const contaminationData = configurator.getContaminationData();
 
-        auto contaminationData = configurator.contaminationData.get();
+        std::lock_guard<std::mutex> lock(output_mutex);
+        std::cout << "DeviceState: " << deviceState << '\n';
+        std::cout << "Temperature: " << temperature << '\n';
+
         std::cout << "ContaminationData [" << contaminationData.size() << " sectors]: ";
         for (size_t i = 0; i < contaminationData.size(); ++i)
         {
@@ -98,6 +117,7 @@ int main(int argc, char* argv[])
       }
       catch (std::exception const& exception)
       {
+        std::lock_guard<std::mutex> lock(output_mutex);
         std::cout << "Polling error: " << exception.what() << '\n';
       }
       std::this_thread::sleep_for(2s);
@@ -107,8 +127,9 @@ int main(int argc, char* argv[])
   // Depends on the configured field of view
   constexpr std::uint64_t expectedNumberOfSegments = 10;
 
+  auto const intervalFilterSettings = configurator.getLFPintervalFilter();
   std::uint64_t const expectedFrameSequenceNumberIncrement =
-    configurator.intervalFilter.isEnabled() ? static_cast<std::uint64_t>(configurator.intervalFilter.get().value()) : 1;
+    intervalFilterSettings._bEnable ? static_cast<std::uint64_t>(intervalFilterSettings._uiReductionFactor.value()) : 1;
 
   sick::compact::scan_data::DataLossMonitor dataLossMonitor {expectedFrameSequenceNumberIncrement, expectedNumberOfSegments};
 

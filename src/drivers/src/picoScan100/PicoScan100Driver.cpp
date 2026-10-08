@@ -5,12 +5,6 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/drivers/picoScan100/PicoScan100Driver.hpp>
 
-#include <sick_perception_sdk/common/logging/logging.hpp>
-#include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/DataLossMonitor.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/PointCloudCollector.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanData.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_2_imu/ImuData.hpp>
 #include <sick_perception_sdk/compact_format/telegram_type_4_encoder/EncoderData.hpp>
 
 #include <chrono>
@@ -24,7 +18,7 @@ SPDX-License-Identifier: MIT
 
 namespace sick::picoScan100 {
 
-Driver::Driver(std::function<void(std::exception_ptr)> const& onError)
+Driver::Driver(std::function<void(std::exception_ptr const&)> const& onError)
   : m_encoderReceiver(onError, "EncoderReceiver")
   , m_imuReceiver(onError, "ImuReceiver")
   , m_scanDataReceiver(onError, "ScanDataReceiver")
@@ -60,7 +54,7 @@ auto Driver::EncoderReceiver::setup(
 ) -> EncoderReceiver&
 {
   BaseT::setup(
-    [this](compact::encoder::EncoderData const& data) {
+    [this](compact::encoder::EncoderData const& data) -> void {
       if (m_callback.has_value())
       {
         (*m_callback)(data);

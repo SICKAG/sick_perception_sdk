@@ -7,6 +7,10 @@ SPDX-License-Identifier: MIT
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <iomanip>
+#include <sstream>
+
+using namespace sick::literals;
 
 TEST(DurationTest, default_construction_is_zero)
 {
@@ -58,21 +62,18 @@ TEST(DurationTest, fromSeconds_converts_one_second_to_one_million_microseconds)
 
 TEST(DurationTest, literal_seconds_constructs_correct_duration)
 {
-  using sick::literals::operator"" _s;
   auto const duration = 42_s;
   EXPECT_EQ(duration.seconds(), 42);
 }
 
 TEST(DurationTest, literal_milliseconds_constructs_correct_duration)
 {
-  using sick::literals::operator"" _ms;
   auto const duration = 5000_ms;
   EXPECT_EQ(duration.seconds(), 5);
 }
 
 TEST(DurationTest, literal_microseconds_constructs_correct_duration)
 {
-  using sick::literals::operator"" _us;
   auto const duration = 5'000'000_us;
   EXPECT_EQ(duration.seconds(), 5);
 }
@@ -139,10 +140,13 @@ TEST(DurationTest, divide_operator_divides_by_unsigned_int)
   EXPECT_EQ(result.seconds(), 5);
 }
 
-TEST(DurationTest, to_string_returns_value_with_unit)
+TEST(DurationTest, stream_operator_writes_value_with_unit)
 {
   auto const duration = sick::Duration::fromMicroseconds(5'000'000);
+  auto stream         = std::ostringstream {};
 
-  EXPECT_THAT(std::to_string(duration), ::testing::HasSubstr("5000000"));
-  EXPECT_THAT(std::to_string(duration), ::testing::EndsWith(" microseconds"));
+  stream << std::fixed << duration;
+
+  EXPECT_THAT(stream.str(), ::testing::HasSubstr("5000000"));
+  EXPECT_THAT(stream.str(), ::testing::EndsWith(" microseconds"));
 }

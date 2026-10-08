@@ -39,7 +39,9 @@ public:
     using BaseT = compact::UdpStreamReceiver<compact::encoder::Parser, EncoderReceiver>;
 
   public:
-    using BaseT::BaseT;
+    explicit EncoderReceiver(typename BaseT::ErrorCallback onError, std::string loggerName)
+      : BaseT(std::move(onError), std::move(loggerName))
+    { }
 
     static constexpr std::uint16_t kDefaultPort = 7504;
 
@@ -60,7 +62,7 @@ public:
   using ScanDataReceiver = compact::UdpScanDataReceiver;
 
   /** @param onError Callback function that is called when an unhandled exception is thrown */
-  explicit Driver(std::function<void(std::exception_ptr)> const& onError = [](std::exception_ptr) -> void {});
+  explicit Driver(std::function<void(std::exception_ptr const&)> const& onError = [](auto) -> void { });
 
   Driver(Driver const&)                    = delete;
   auto operator=(Driver const&) -> Driver& = delete;

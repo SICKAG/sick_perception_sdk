@@ -17,28 +17,17 @@ SPDX-License-Identifier: MIT
  */
 namespace sick::compact::encoder {
 
-#pragma pack(push, 1) // add pragma to prevent the compiler from adding padding bytes for alignment
-
-struct SDK_EXPORT Payload
-{
-  std::uint32_t senderId {0};
-  std::uint64_t frameSequenceNumber {0};
-  std::uint32_t tickCounter {0};
-  std::uint32_t tickCounterReference1 {0};
-  std::uint32_t tickCounterReference2 {0};
-  Speed speed;
-  Timestamp tickCounterTimestamp;
-  Timestamp timestampReference1;
-  Timestamp timestampReference2;
-};
-
 struct SDK_EXPORT EncoderData
 {
   TelegramHeader telegramHeader;
-  Payload payload;
-  std::uint32_t checksum {0};
+  std::uint64_t frameSequenceNumber {0};
+  std::uint32_t tickCount {0};
+  std::uint32_t tickCountAtReferenceSignal1 {0};
+  std::uint32_t tickCountAtReferenceSignal2 {0};
+  Speed speed;
+  Timestamp timestampOfTickCount;
+  Timestamp timestampOfReferenceSignal1;
+  Timestamp timestampOfReferenceSignal2;
 };
-
-#pragma pack(pop)
 
 } // namespace sick::compact::encoder

@@ -5,6 +5,13 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/drivers/Receiver/UdpImuReceiver.hpp>
 
+#include <sick_perception_sdk/compact_format/telegram_type_2_imu_legacy/ImuData.hpp>
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+
 namespace sick::compact {
 
 auto UdpImuReceiver::setup(
@@ -15,7 +22,7 @@ auto UdpImuReceiver::setup(
 ) -> UdpImuReceiver&
 {
   BaseT::setup(
-    [this](imu::ImuData const& data) {
+    [this](imu::ImuData const& data) -> void {
       if (m_callback.has_value())
       {
         (*m_callback)(data);

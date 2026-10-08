@@ -6,8 +6,8 @@ SPDX-License-Identifier: MIT
 #pragma once
 
 #include <sick_perception_sdk/common/export.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_2_imu/ImuData.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_2_imu/ImuParser.hpp>
+#include <sick_perception_sdk/compact_format/telegram_type_2_imu_legacy/ImuData.hpp>
+#include <sick_perception_sdk/compact_format/telegram_type_2_imu_legacy/ImuLegacyParser.hpp>
 #include <sick_perception_sdk/drivers/Receiver/UdpStreamReceiver.hpp>
 
 #include <chrono>
@@ -19,11 +19,14 @@ SPDX-License-Identifier: MIT
 
 namespace sick::compact {
 
-class SDK_EXPORT UdpImuReceiver : public UdpStreamReceiver<imu::Parser, UdpImuReceiver>
+class SDK_EXPORT UdpImuReceiver : public UdpStreamReceiver<imu_legacy::Parser, UdpImuReceiver>
 {
 public:
-  using BaseT = UdpStreamReceiver<imu::Parser, UdpImuReceiver>;
-  using BaseT::BaseT;
+  using BaseT = UdpStreamReceiver<imu_legacy::Parser, UdpImuReceiver>;
+
+  explicit UdpImuReceiver(typename BaseT::ErrorCallback onError, std::string loggerName)
+    : BaseT(std::move(onError), std::move(loggerName))
+  { }
 
   static constexpr std::uint16_t kDefaultPort = 7503;
 

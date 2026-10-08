@@ -5,6 +5,7 @@ SPDX-License-Identifier: MIT
 
 #pragma once
 
+#include <limits>
 #include <optional>
 #include <stdexcept>
 
@@ -15,8 +16,8 @@ class SequenceNumberLossMonitor
 {
 public:
   explicit SequenceNumberLossMonitor(SequenceNumberT expectedIncrement = 1)
-    : m_expectedIncrement(expectedIncrement)
-    , m_lastSequenceNumber(std::nullopt)
+    : m_lastSequenceNumber(std::nullopt)
+    , m_expectedIncrement(expectedIncrement)
   {
     if (expectedIncrement <= 0)
     {
@@ -67,7 +68,12 @@ public:
         return 1;
       }
 
-      return (diff - 1) / m_expectedIncrement;
+      auto const losses = (diff - 1) / m_expectedIncrement;
+      if (losses > static_cast<SequenceNumberT>((std::numeric_limits<int>::max)()))
+      {
+        return (std::numeric_limits<int>::max)();
+      }
+      return static_cast<int>(losses);
     }();
 
     m_lastSequenceNumber = currentSequenceNumber;

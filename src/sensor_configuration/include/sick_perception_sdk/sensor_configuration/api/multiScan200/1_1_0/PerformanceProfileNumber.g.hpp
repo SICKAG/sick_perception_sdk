@@ -1,0 +1,58 @@
+/*
+Copyright (c) 2026 SICK AG
+SPDX-License-Identifier: MIT
+*/
+
+/**
+ * @file PerformanceProfileNumber.g.hpp Sensor REST API payload definitions.
+ * @warning This file was generated for device 'multiScan200' version '1.1.0'.
+ * Do not edit manually!
+ */
+#pragma once
+
+
+namespace sick::multiScan200::v1_1_0::api::rest {
+
+/**
+ * @brief Payloads for endpoint /PerformanceProfileNumber.
+*/
+struct PerformanceProfileNumber
+{
+
+  constexpr static const char* variableName = "PerformanceProfileNumber";
+  constexpr static const bool isSopasMethod = false;
+
+  /**
+   * @brief Returns the scan configuration profile (scanning frequency and angular resolution).
+   */
+  struct Get
+  {
+    struct Response
+    {
+      enum class PerformanceProfileNumber
+      {
+        Sc047h047v27620hz1x = 1,
+        Sc047h094v27620hz1x = 2,
+        Sc047h023v27620hz1x = 3,
+        Sc047h047v36010hz1x = 4,
+        Sc023h047v27620hz2x = 10,
+        Sc023h023v27620hz2x = 11,
+        Sc012h023v27620hz4x = 12,
+        Sc047h047v19020hz1x = 20,
+        Sc047h047v12020hz1x = 21,
+      };
+
+      Response() = default;
+
+      explicit Response(PerformanceProfileNumber PerformanceProfileNumber)
+        : _PerformanceProfileNumber(PerformanceProfileNumber)
+      {}
+
+      PerformanceProfileNumber _PerformanceProfileNumber;
+    };
+
+  }; // struct Get
+
+}; // struct PerformanceProfileNumber
+
+} // namespace sick::multiScan200::v1_1_0::api::rest

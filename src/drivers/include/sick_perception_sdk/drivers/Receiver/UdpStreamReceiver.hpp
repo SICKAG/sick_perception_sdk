@@ -22,18 +22,20 @@ class UdpStreamReceiver : public StreamReceiver<UdpReceiverThread<ParserT>>
 {
   using BaseT = StreamReceiver<UdpReceiverThread<ParserT>>;
 
+  friend DerivedT;
+
+  explicit UdpStreamReceiver(typename BaseT::ErrorCallback onError, std::string loggerName)
+    : BaseT(std::move(onError), std::move(loggerName))
+  { }
+
 public:
   using ThreadT      = UdpReceiverThread<ParserT>;
   using DataCallback = std::function<void(typename ParserT::DataT const&)>;
 
   static constexpr std::size_t kDefaultReceiveBufferSize = 65'507;
 
-  explicit UdpStreamReceiver(typename BaseT::ErrorCallback onError, std::string loggerName)
-    : BaseT(onError, loggerName)
-  { }
-
   auto setup(
-    DataCallback dataCallback,
+    DataCallback const& dataCallback,
     std::uint16_t receiverPort,
     std::chrono::milliseconds firstDataTimeout = BaseT::kDefaultFirstDataTimeout,
     std::chrono::milliseconds newDataTimeout   = BaseT::kDefaultNewDataTimeout,

@@ -7,7 +7,7 @@ function(install_sdk_library)
   cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   if(NOT ARG_TARGET)
-    message(FATAL_ERROR "install_sdk_library: TARGET argument is required")
+    message(FATAL_ERROR "sick_perception_sdk: install_sdk_library: TARGET argument is required")
   endif()
 
   set(LIB_NAME ${ARG_TARGET})
@@ -34,7 +34,7 @@ function(install_sdk_library)
   # Generate Config.cmake content
   set(CONFIG_CONTENT "@PACKAGE_INIT@\n\n")
   
-  message(STATUS "Installing SDK library '${LIB_NAME}' with dependencies: '${ARG_DEPENDENCIES}'")
+  message(STATUS "sick_perception_sdk: Installing SDK library '${LIB_NAME}' with dependencies: '${ARG_DEPENDENCIES}'")
   if(ARG_DEPENDENCIES)
     string(APPEND CONFIG_CONTENT "include(CMakeFindDependencyMacro)\n\n")
     # Propagate static library preference for ZLIB based on how SDK was built

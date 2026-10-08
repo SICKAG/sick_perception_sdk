@@ -2,48 +2,81 @@ cmake_minimum_required(VERSION 3.22)
 
 set(TEST_NAME compact_format_unit_test)
 set(TEST_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils/ScanDataGenerator.cpp
+  # DataLoss
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataLoss/FrameSequenceNumberLossMonitor.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataLoss/SegmentIndexLossMonitor.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataLoss/SequenceNumberLossMonitor.test.cpp
+  # PointCloud
+  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloud/OrganizedPointCloudBuilder.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloud/PointCloudToPcdConverter.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloud/UnorganizedPointCloud.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloud/UnorganizedPointCloudBuilder.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloud/UnorganizedPointCloudCollector.test.cpp
+  # Telegram type 1
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_1_scan_data/ScanDataGenerator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_1_scan_data/telegram_type_1_DataLossMonitor.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_1_scan_data/telegram_type_1_PointCloudCollector.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_1_scan_data/telegram_type_1_ScanData.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_1_scan_data/telegram_type_1_ScanDataParser.test.cpp
+  # Telegram type 2
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_2_imu_legacy/telegram_type_2_ImuLegacyParser.test.cpp
+  # Telegram type 3
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_3_ambient_light/telegram_type_3_AmbientLightParser.test.cpp
+  # Telegram type 4
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_4_encoder/telegram_type_4_EncoderParser.test.cpp
+  # Telegram type 6
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_6_multiScan200/MultiScan200DataGenerator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_6_multiScan200/telegram_type_6_DataLossMonitor.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_6_multiScan200/telegram_type_6_MultiScan200Parser.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_6_multiScan200/telegram_type_6_PointCloudConverter.convertToOrganized.test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_6_multiScan200/telegram_type_6_PointCloudConverter.convertToUnorganized.test.cpp
+  # Telegram type 7
+  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_7_imu/telegram_type_7_ImuParser.test.cpp
+  # Utils
   ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils/TestParams.cpp
+  # Various
   ${CMAKE_CURRENT_SOURCE_DIR}/Crc32Utils.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/EncoderParser.test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FrameSequenceNumberLossMonitor.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ImuParser.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/OrganizedPointCloudBuilder.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloudCollector.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/PointCloudToPcdConverter.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ScanDataParser.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SegmentIndexLossMonitor.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SequenceNumberLossMonitor.test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/StreamExtractor.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/telegram_type_1_scanData_DataLossMonitor.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/UnorganizedPointCloud.test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/UnorganizedPointCloudBuilder.test.cpp
 )
 set(TEST_RESOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/LRS4581_scan-frame_0.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/LRS4581_scan-frame_1.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/LRS4581_scan-frame_2.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/multiScan136_imu-frame_0.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/multiScan136_imu-frame_1.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/multiScan136_imu-frame_2.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/multiScan136_scan-frame_0.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/multiScan136_scan-frame_1.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/multiScan136_scan-frame_2.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/picoScan150_encoder-frame_0.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/picoScan150_encoder-frame_1.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/picoScan150_encoder-frame_2.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/picoScan150_profile1_scan-frame_0.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/picoScan150_profile1_scan-frame_1.bin
-  ${CMAKE_CURRENT_SOURCE_DIR}/data/picoScan150_profile1_scan-frame_2.bin
+  # Telegram type 1
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_LRS4581-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_LRS4581-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_LRS4581-frame_2.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_multiScan136-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_multiScan136-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_multiScan136-frame_2.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_picoScan150_profile_1-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_picoScan150_profile_1-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_1_picoScan150_profile_1-frame_2.bin
+  # Telegram type 2
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_2_multiScan136-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_2_multiScan136-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_2_multiScan136-frame_2.bin
+  # Telegram type 3
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_3_multiScan270_profile_12-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_3_multiScan270_profile_12-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_3_multiScan270_profile_12-frame_2.bin
+  # Telegram type 4
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_4_v1_picoScan150-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_4_v1_picoScan150-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_4_v1_picoScan150-frame_2.bin
+  # Telegram type 6
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_6_multiScan270_profile_12_full-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_6_multiScan270_profile_12_full-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_6_multiScan270_profile_12_full-frame_2.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_6_multiScan270_profile_12_minimal-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_6_multiScan270_profile_12_minimal-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_6_multiScan270_profile_12_minimal-frame_2.bin
+  # Telegram type 7
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_7_multiScan270-frame_0.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_7_multiScan270-frame_1.bin
+  ${CMAKE_CURRENT_SOURCE_DIR}/data/telegram_type_7_multiScan270-frame_2.bin
 )
 
-# Add option to enable gcov-based coverage generation
-option(ENABLE_GCOV "Enable gcov coverage generation and produce gcovr HTML report" OFF)
-
 add_executable(${TEST_NAME})
-
 
 target_sources(${TEST_NAME}
   PRIVATE

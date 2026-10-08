@@ -6,7 +6,6 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/quantities/Temperature.hpp>
 
 #include <ostream>
-#include <string>
 
 namespace sick {
 
@@ -16,12 +15,3 @@ auto operator<<(std::ostream& stream, sick::Temperature const& temperature) -> s
 }
 
 } // namespace sick
-
-namespace std {
-
-auto to_string(sick::Temperature const& temperature) -> std::string
-{
-  return std::to_string(temperature.degreesCelsius()) + " degC";
-}
-
-} // namespace std

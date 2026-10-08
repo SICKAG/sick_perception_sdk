@@ -4,8 +4,8 @@ info:
  contact: 
   name: Python Examples GitHub
   url: https://github.com/SICKAG/sick_scan_rest_client
- version: "1.9.1.0R"
- x-sick-openapi-generator-version: 1.2.0-b.1
+ version: "1.9.1"
+ x-sick-openapi-generator-version: 1.2.0
  title: "LRS4000 REST interface description"
 servers: 
 - url: http://{device}/api
@@ -311,6 +311,7 @@ paths:
           properties: 
            result:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -462,6 +463,7 @@ paths:
            properties: 
             SCdevicestate:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -1003,6 +1005,7 @@ paths:
            properties: 
             EtherAddressingMode:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -1032,6 +1035,7 @@ paths:
          properties: 
           EtherAddressingMode:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -1074,6 +1078,7 @@ paths:
            properties: 
             EtherDHCPFallback:
              type: integer
+             format: uint8
              default: 1
              enum: 
              - 0
@@ -1103,6 +1108,7 @@ paths:
          properties: 
           EtherDHCPFallback:
            type: integer
+           format: uint8
            default: 1
            enum: 
            - 0
@@ -1586,6 +1592,7 @@ paths:
           properties: 
            ErrorCode:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -1642,6 +1649,7 @@ paths:
            properties: 
             FREchoFilter:
              type: integer
+             format: uint8
              default: 2
              enum: 
              - 0
@@ -1673,6 +1681,7 @@ paths:
          properties: 
           FREchoFilter:
            type: integer
+           format: uint8
            default: 2
            enum: 
            - 0
@@ -1852,40 +1861,6 @@ paths:
         properties: 
          header:
           $ref: '#/components/schemas/ResponseHeader'
- /EtherCoLaAEventsEnable:
-  post: 
-   tags: 
-   - 9 - Leagcy protocols
-   summary: ""
-   description: 'This command enables/ disables the CoLa A event output. If disabled, CoLa A port 2111 still provides access to poll device parameters but event-based streaming output is limited to the ports 2112 (CoLa B) or data protocol Compact.'
-   operationId: Post/EtherCoLaAEventsEnable
-   requestBody:
-    description: successful operation
-    required: true
-    content: 
-     application/json: 
-      schema: 
-       type: object
-       properties: 
-        header:
-         $ref: '#/components/schemas/PostBodyHeader'
-        data:
-         type: object
-         properties: 
-          EtherCoLaAEventsEnable:
-           type: boolean
-           default: False
-   responses: 
-    '200':
-     description: successful operation
-     content: 
-      application/json: 
-       schema: 
-        type: object
-        required: ["header"]
-        properties: 
-         header:
-          $ref: '#/components/schemas/ResponseHeader'
  /EtherColaTransmitTimeout:
   post: 
    tags: 
@@ -2009,6 +1984,7 @@ paths:
            properties: 
             SensitivityMode:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -2040,6 +2016,7 @@ paths:
          properties: 
           SensitivityMode:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -2101,6 +2078,7 @@ paths:
           properties: 
            eScanConfigError:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -2139,6 +2117,7 @@ paths:
          properties: 
           EncSetting:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -2428,6 +2407,7 @@ paths:
           properties: 
            eStrategy:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -2446,6 +2426,7 @@ paths:
             default: 3
            eThreshold:
             type: integer
+            format: uint8
             default: 1
             enum: 
             - 0
@@ -2458,6 +2439,7 @@ paths:
               * 2 - CM_HIGH
            eCover:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -2515,6 +2497,7 @@ paths:
            properties: 
             eStrategy:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -2533,6 +2516,7 @@ paths:
              default: 3
             eThreshold:
              type: integer
+             format: uint8
              default: 1
              enum: 
              - 0
@@ -2545,6 +2529,7 @@ paths:
                * 2 - CM_HIGH
             eCover:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -2784,6 +2769,7 @@ paths:
          properties: 
           SyncMode:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -2865,6 +2851,7 @@ paths:
            properties: 
             MotorSyncStatus:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -2898,6 +2885,7 @@ paths:
            properties: 
             ScanDataFormat:
              type: integer
+             format: uint8
              default: 3
              enum: 
              - 0
@@ -2929,6 +2917,7 @@ paths:
          properties: 
           ScanDataFormat:
            type: integer
+           format: uint8
            default: 3
            enum: 
            - 0
@@ -2980,6 +2969,7 @@ paths:
               properties: 
                PortType:
                 type: integer
+                format: uint8
                 default: 0
                 enum: 
                 - 0
@@ -3005,6 +2995,7 @@ paths:
                   default: 10
                  Sensitivity:
                   type: integer
+                  format: uint8
                   default: 0
                   enum: 
                   - 0
@@ -3028,6 +3019,7 @@ paths:
                   $ref: '#/components/schemas/Logic_t'
                  OutputMode:
                   type: integer
+                  format: uint8
                   default: 0
                   enum: 
                   - 0
@@ -3040,6 +3032,7 @@ paths:
                     * 2 - PUSH_PULL
                  RestartType:
                   type: integer
+                  format: uint8
                   default: 0
                   enum: 
                   - 0
@@ -3064,6 +3057,7 @@ paths:
                   default: 1
                  Combination:
                   type: integer
+                  format: uint8
                   default: 1
                   enum: 
                   - 0
@@ -3150,6 +3144,7 @@ paths:
             properties: 
              PortType:
               type: integer
+              format: uint8
               default: 0
               enum: 
               - 0
@@ -3175,6 +3170,7 @@ paths:
                 default: 10
                Sensitivity:
                 type: integer
+                format: uint8
                 default: 0
                 enum: 
                 - 0
@@ -3198,6 +3194,7 @@ paths:
                 $ref: '#/components/schemas/Logic_t'
                OutputMode:
                 type: integer
+                format: uint8
                 default: 0
                 enum: 
                 - 0
@@ -3210,6 +3207,7 @@ paths:
                   * 2 - PUSH_PULL
                RestartType:
                 type: integer
+                format: uint8
                 default: 0
                 enum: 
                 - 0
@@ -3234,6 +3232,7 @@ paths:
                 default: 1
                Combination:
                 type: integer
+                format: uint8
                 default: 1
                 enum: 
                 - 0
@@ -3518,6 +3517,7 @@ paths:
           properties: 
            ErrorCode:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -3559,6 +3559,7 @@ paths:
           properties: 
            ErrorCode:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -3599,6 +3600,7 @@ paths:
             default: 10
            eFilterMethod:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -3638,6 +3640,7 @@ paths:
              default: 10
             eFilterMethod:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -4011,6 +4014,7 @@ paths:
           properties: 
            ErrorCode:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -4124,6 +4128,7 @@ paths:
              minItems: 48
              items: 
               type: integer
+              format: uint8
               default: 0
               enum: 
               - 0
@@ -4157,6 +4162,7 @@ paths:
            properties: 
             FieldEvaluationApplicationState:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -4215,6 +4221,71 @@ paths:
           EnableDetectionHistory:
            type: boolean
            default: True
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+ /EvaluationsToLog:
+  get: 
+   tags: 
+   - 21 - Detection History
+   summary: ""
+   description: 'Returns/sets the evaluations which are logged (if they are in use).'
+   operationId: Get/EvaluationsToLog
+   responses: 
+    '200':
+     description: successful operation
+     content: 
+      application/json: 
+       schema: 
+        type: object
+        required: ["header"]
+        properties: 
+         header:
+          $ref: '#/components/schemas/ResponseHeader'
+         data:
+           type: object
+           properties: 
+            EvaluationsToLog:
+             type: array
+             maxItems: 48
+             minItems: 48
+             items: 
+              type: boolean
+              default: True
+  post: 
+   tags: 
+   - 21 - Detection History
+   summary: ""
+   description: 'Returns/sets the evaluations which are logged (if they are in use).'
+   operationId: Post/EvaluationsToLog
+   requestBody:
+    description: successful operation
+    required: true
+    content: 
+     application/json: 
+      schema: 
+       type: object
+       properties: 
+        header:
+         $ref: '#/components/schemas/PostBodyHeader'
+        data:
+         type: object
+         properties: 
+          EvaluationsToLog:
+           type: array
+           maxItems: 48
+           minItems: 48
+           items: 
+            type: boolean
+            default: True
    responses: 
     '200':
      description: successful operation
@@ -4366,6 +4437,7 @@ paths:
          properties: 
           ScanMergerSource:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -4407,6 +4479,7 @@ paths:
          properties: 
           ScanMergeTrigger:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -4538,6 +4611,7 @@ paths:
          properties: 
           EncoderTransformationType:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -4740,6 +4814,7 @@ paths:
            properties: 
             TSCRole:
              type: integer
+             format: uint8
              default: 0
              enum: 
              - 0
@@ -4773,6 +4848,7 @@ paths:
          properties: 
           TSCRole:
            type: integer
+           format: uint8
            default: 0
            enum: 
            - 0
@@ -4886,6 +4962,7 @@ paths:
            properties: 
             TSCTCtimezone:
              type: integer
+             format: uint8
              default: 36
              enum: 
              - 0
@@ -5121,6 +5198,7 @@ paths:
          properties: 
           TSCTCtimezone:
            type: integer
+           format: uint8
            default: 36
            enum: 
            - 0
@@ -5470,6 +5548,7 @@ paths:
           properties: 
            ErrorCode:
             type: integer
+            format: uint8
             default: 0
             enum: 
             - 0
@@ -5485,6 +5564,7 @@ components:
    properties: 
     status:
      type: integer
+     format: uint16
      default: 0
      enum: 
      - 0
@@ -5544,6 +5624,7 @@ components:
    - Service
   DeviceStatus:
    type: integer
+   format: uint8
    default: 0
    enum: 
    - 0
@@ -5616,6 +5697,7 @@ components:
    properties: 
     eIOState:
      type: integer
+     format: uint8
      default: 2
      enum: 
      - 0
@@ -5628,6 +5710,7 @@ components:
        * 2 - IOS_TRISTATE
   ContaminationData_t:
    type: integer
+   format: uint8
    default: 3
    enum: 
    - 0
@@ -5642,6 +5725,7 @@ components:
      * 3 - NONE
   PerformanceProfiles_t:
    type: integer
+   format: uint8
    default: 0
    enum: 
    - 0
@@ -5690,6 +5774,7 @@ components:
      * 95 - SC_250HZ_0080DEG_m180_180_3Overlap_2IL_XR
   Logic_t:
    type: integer
+   format: uint8
    default: 0
    enum: 
    - 0
@@ -5703,6 +5788,7 @@ components:
    properties: 
     ePortState:
      type: integer
+     format: uint8
      default: 2
      enum: 
      - 0
@@ -5736,6 +5822,7 @@ components:
    properties: 
     State:
      type: integer
+     format: uint8
      default: 0
      enum: 
      - 0

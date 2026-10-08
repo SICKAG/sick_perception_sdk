@@ -22,7 +22,7 @@ template <typename ParserT>
 class TcpReceiverThread : public ReceiverThread<typename ParserT::DataT>
 {
 public:
-  //! \param deviceAddress The IP address of the device to connect to
+  //! \param sensorAddress The IP address of the device to connect to
   //! \param sensorPort The port on the device to which to connect
   //! \param receiveBufferSize The size of the buffer used to receive data from the socket
   //! \param onNewData Callback function that is called when new data is received and parsed
@@ -33,17 +33,17 @@ public:
   //! received, an exception is raised. A value of 0 means no timeout.
   //! \param streamName The name of the stream, used to identify the stream in logs
   TcpReceiverThread(
-    IpV4Address const& deviceAddress,
+    IpV4Address const& sensorAddress,
     std::uint16_t sensorPort,
     std::size_t receiveBufferSize,
     std::function<void(typename ParserT::DataT)> onNewData,
-    std::function<void(std::exception_ptr)> onError,
+    std::function<void(std::exception_ptr const&)> onError,
     std::chrono::milliseconds firstDataTimeout = std::chrono::milliseconds(0),
     std::chrono::milliseconds newDataTimeout   = std::chrono::milliseconds(0),
     std::string streamName                     = "TcpReceiverThread"
   )
     : ReceiverThread<typename ParserT::DataT>(
-        std::make_unique<TcpClientSocket>(deviceAddress, sensorPort),
+        std::make_unique<TcpClientSocket>(sensorAddress, sensorPort),
         receiveBufferSize,
         std::move(onNewData),
         std::move(onError),
@@ -60,6 +60,11 @@ public:
     // still being accessed by the receive thread.
     this->stop();
   }
+
+  TcpReceiverThread(TcpReceiverThread const&)                    = delete;
+  auto operator=(TcpReceiverThread const&) -> TcpReceiverThread& = delete;
+  TcpReceiverThread(TcpReceiverThread&&)                         = delete;
+  auto operator=(TcpReceiverThread&&) -> TcpReceiverThread&      = delete;
 
 private:
   void receive() override

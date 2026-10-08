@@ -21,4 +21,5 @@ public:
 private:
   int m_errorCode;
 };
+
 } // namespace sick

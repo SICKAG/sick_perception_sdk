@@ -3,10 +3,10 @@ Copyright (c) 2026 SICK AG
 SPDX-License-Identifier: MIT
 */
 
+#include <sick_perception_sdk/common/numbers.hpp>
 #include <sick_perception_sdk/common/quantities/Angle.hpp>
 
 #include <cmath>
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 TEST(AngleTest, default_construction_is_nan)
@@ -23,19 +23,19 @@ TEST(AngleTest, fromDegrees_converts_to_degrees_roundtrip)
 
 TEST(AngleTest, fromRadians_converts_to_radians_roundtrip)
 {
-  auto const angle = sick::Angle::fromRadians(static_cast<float>(M_PI) / 2.0f);
-  EXPECT_NEAR(angle.radians(), static_cast<float>(M_PI) / 2.0f, 1e-6f);
+  auto const angle = sick::Angle::fromRadians(sick::numbers::pi / 2.0f);
+  EXPECT_NEAR(angle.radians(), sick::numbers::pi / 2.0f, 1e-6f);
 }
 
 TEST(AngleTest, fromDegrees_converts_to_radians_correctly)
 {
   auto const angle = sick::Angle::fromDegrees(180.0f);
-  EXPECT_NEAR(angle.radians(), static_cast<float>(M_PI), 1e-6f);
+  EXPECT_NEAR(angle.radians(), sick::numbers::pi, 1e-6f);
 }
 
 TEST(AngleTest, fromRadians_converts_to_degrees_correctly)
 {
-  auto const angle = sick::Angle::fromRadians(static_cast<float>(M_PI));
+  auto const angle = sick::Angle::fromRadians(sick::numbers::pi);
   EXPECT_NEAR(angle.degrees(), 180.0f, 1e-6f);
 }
 
@@ -81,11 +81,4 @@ TEST(AngleTest, fromDegrees_converts_small_angle_roundtrip)
   auto const angle        = sick::Angle::fromDegrees(smallDegrees);
   auto const roundtripped = angle.degrees();
   EXPECT_NEAR(roundtripped, smallDegrees, 1e-8f);
-}
-
-TEST(AngleTest, to_string_returns_value_with_unit)
-{
-  auto const angle = sick::Angle::fromDegrees(90.0f);
-  EXPECT_THAT(std::to_string(angle), ::testing::HasSubstr("1.57"));
-  EXPECT_THAT(std::to_string(angle), ::testing::EndsWith(" rad"));
 }

@@ -9,18 +9,22 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/logging/logging.hpp>
 #include <sick_perception_sdk/sensor_configuration/HttpClient/IHttpClient.hpp>
 
-#define CPPHTTPLIB_OPENSSL_SUPPORT 1 // NOLINT(cppcoreguidelines-macro-usage)
 #include <httplib.h>
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace sick::httplib_client {
 
 /**
  * @brief Base class for HTTP clients using [httplib](https://github.com/yhirose/cpp-httplib).
+ * 
+ * @ingroup Http
+ * @ingroup sensor_configuration
  */
 template <class ClientT>
 class HttpClientBase : public IHttpClient
@@ -47,20 +51,42 @@ public:
   HttpClientBase(HttpClientBase&&) noexcept                    = delete;
   auto operator=(HttpClientBase&&) noexcept -> HttpClientBase& = delete;
 
-  auto get(std::string const& endpoint) const -> std::string override
+  auto get(std::string const& endpoint) const -> std::string
   {
-    auto const result = m_client->Get(endpoint);
-    throwIfNotSuccessful(result, "GET", endpoint);
-    // AXIVION Next Line CertC++-EXP34 : validity of the result variable is checked in throwIfNotSuccessful.
-    return result->body;
+    return send({HttpMethod::Get, endpoint}).body;
   }
 
-  auto post(std::string const& endpoint, std::string const& payload) const -> std::string override
+  auto send(HttpRequest const& request) const -> HttpResponse override
   {
-    auto const result = m_client->Post(endpoint, payload, "application/json");
-    throwIfNotSuccessful(result, "POST", endpoint);
+    httplib::Headers headers;
+    for (auto const& [name, value] : request.headers)
+    {
+      headers.emplace(name, value);
+    }
+
+    httplib::Result result = [&]() -> httplib::Result {
+      switch (request.method)
+      {
+      case HttpMethod::Get:
+        return m_client->Get(request.path, headers);
+      case HttpMethod::Post:
+        return m_client->Post(request.path, headers, request.body, request.contentType);
+      case HttpMethod::Put:
+        return m_client->Put(request.path, headers, request.body, request.contentType);
+      }
+      throw std::runtime_error("Unsupported HTTP method");
+    }();
+
+    throwIfNotSuccessful(result, methodToString(request.method), request.path);
+
+    HttpResponse response;
     // AXIVION Next Line CertC++-EXP34 : validity of the result variable is checked in throwIfNotSuccessful.
-    return result->body;
+    response.statusCode = result->status;
+    // AXIVION Next Line CertC++-EXP34 : validity of the result variable is checked in throwIfNotSuccessful.
+    response.contentType = result->get_header_value("Content-Type");
+    // AXIVION Next Line CertC++-EXP34 : validity of the result variable is checked in throwIfNotSuccessful.
+    response.body = result->body;
+    return response;
   }
 
   /**
@@ -96,6 +122,20 @@ protected:
   std::unique_ptr<ClientT> m_client; // NOLINT(misc-non-private-member-variables-in-classes, cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
+  static auto methodToString(HttpMethod method) -> std::string
+  {
+    switch (method)
+    {
+    case HttpMethod::Get:
+      return "GET";
+    case HttpMethod::Post:
+      return "POST";
+    case HttpMethod::Put:
+      return "PUT";
+    }
+    return "UNKNOWN";
+  }
+
   static void throwIfNotSuccessful(httplib::Result const& result, std::string const& method, std::string const& endpoint)
   {
     if (!result)

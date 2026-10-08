@@ -6,7 +6,6 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/quantities/Distance.hpp>
 
 #include <ostream>
-#include <string>
 
 namespace sick {
 
@@ -16,12 +15,3 @@ auto operator<<(std::ostream& stream, sick::Distance const& distance) -> std::os
 }
 
 } // namespace sick
-
-namespace std {
-
-auto to_string(sick::Distance const& distance) -> std::string
-{
-  return std::to_string(distance.meters()) + " m";
-}
-
-} // namespace std

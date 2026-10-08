@@ -49,8 +49,8 @@ IpV4Address::IpV4Address(std::string const& str)
         throw std::out_of_range("Octet out of range");
       }
 
-      // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index): segmentIndex is checked above
-      m_bytes[segmentIndex] = octet;
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access): segmentIndex is checked above
+      m_bytes[segmentIndex] = static_cast<std::uint8_t>(octet);
       segmentIndex++;
     }
 
@@ -72,6 +72,7 @@ IpV4Address::IpV4Address(std::array<std::uint8_t, 4> bytes)
 
 auto IpV4Address::toString() const -> std::string
 {
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access): fixed-size 4-byte array with constant indices
   return std::to_string(m_bytes[0]) + "." + std::to_string(m_bytes[1]) + "." + std::to_string(m_bytes[2]) + "." + std::to_string(m_bytes[3]);
 }
 

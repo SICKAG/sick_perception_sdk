@@ -8,7 +8,6 @@ SPDX-License-Identifier: MIT
 #pragma once
 
 #include <cstdint>
-#include <nlohmann/json.hpp>
 #include <stdexcept>
 
 namespace sick {
@@ -42,11 +41,13 @@ private:
   ValueT m_value;
 };
 
-template <typename ValueT, ValueT min, ValueT max, ValueT defaultValue>
-inline void from_json(nlohmann::json const& j, NumericRange<ValueT, min, max, defaultValue>& r)
+// The JSON type is a template parameter so this public header does not depend on <nlohmann/json.hpp>.
+// The body is only instantiated in the (private) serialization translation units, which include the
+// full nlohmann/json definition. ADL still finds this overload for NumericRange members.
+template <typename BasicJsonT, typename ValueT, ValueT min, ValueT max, ValueT defaultValue>
+inline void from_json(BasicJsonT const& j, NumericRange<ValueT, min, max, defaultValue>& r)
 {
-  ValueT const value = j.get<ValueT>();
-  r                  = NumericRange<ValueT, min, max, defaultValue>(value);
+  r = NumericRange<ValueT, min, max, defaultValue>(j.template get<ValueT>());
 }
 
 } // namespace sick

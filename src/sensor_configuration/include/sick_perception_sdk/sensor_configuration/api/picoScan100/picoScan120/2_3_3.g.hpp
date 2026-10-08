@@ -1,0 +1,104 @@
+/*
+Copyright (c) 2026 SICK AG
+SPDX-License-Identifier: MIT
+*/
+
+/**
+ * @file 2_3_3.g.hpp Sensor REST API payload definitions.
+ * @warning This file was generated for device 'picoScan120' version '2.3.3'.
+ * Do not edit manually!
+ */
+#pragma once
+
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/checkCredentials.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/DeviceIdent.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LocationName.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/SerialNumber.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/FirmwareVersion.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/SetPassword.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/getChallenge.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/changePassword.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EnableUserLevel.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/OrderNumber.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/DeviceStatus.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/WriteEeprom.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/SCdevicestate.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/SoftReset.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/RebootDevice.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LoadFactoryDefaults.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LoadApplicationDefaults.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LastParaDate.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LastParaTime.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/DoDiagnosisDump.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/GetDiagnosisDumpInfo.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/OutputState.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/PortState.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/mResetOutputCounter.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherIPAddress.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherIPGateAddress.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherIPMask.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherHostIPPort.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherAuxIPPort.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherAuxEnabled.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherCoLaScanMode.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherAddressingMode.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherDHCPFallback.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EthernetUpdate.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherIPAddressDHCP.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherIPGateAddressDHCP.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherIPMaskDHCP.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/httpsStatus.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/certificateBundleInfo.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/removeCertificateBundle.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/setCertificateBundle.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherSessionTimeout.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/SetWebserverEnabled.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/GetWebserverEnabled.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EnableLegacyUserLevel.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/EtherMACAddress.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/PowerOnCnt.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/DailyOpHours.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/OpHours.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/DeviceType.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/laserType.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/sipmType.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/RunFirmwareUpdate.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/UpdateState.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/CreateParameterBackupResult.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/RestoreParameterBackupResult.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/CreateParameterBackup.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/RestoreParameterBackup.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/ScanDataEthSettings.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/ScanDataEnable.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/ScanDataFormat.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/rosFrameId.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/rosParentFrameId.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/rosNamespace.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/ScanDataConfig.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/rosDomainId.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/compactTelegramType1Content.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/PortConfiguration.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/SetOutput.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LEDState.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LEDEnable.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/FindMe.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LFTchecksum.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/mStartMeasure.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/mStandby.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/mStopMeasure.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/AutoStartMeasure.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/ScanConfig.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/temperatureAlarmConfiguration.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/temperatureAlarmStatus.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/CurrentTempDev.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/operatingMode.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LFPparticle.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/SensorPosition.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/TSCRole.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/TSCTCSrvAddr.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/TSCTCtimezone.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/TSCTCupdatetime.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LSPdatetime.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/LSPsetdatetime.g.hpp>
+#include <sick_perception_sdk/sensor_configuration/api/picoScan100/picoScan120/2_3_3/CreateSessionToken.g.hpp>
+

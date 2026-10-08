@@ -19,7 +19,8 @@ SPDX-License-Identifier: MIT
 namespace sick {
 
 TcpClientSocket::TcpClientSocket(IpV4Address serverAddress, std::uint16_t serverPort)
-  : m_serverAddress(serverAddress)
+  : Socket("TcpClientSocket::" + serverAddress + ":" + std::to_string(serverPort))
+  , m_serverAddress(serverAddress)
   , m_port(serverPort)
   , m_addressInfo(nullptr)
 {
@@ -27,9 +28,10 @@ TcpClientSocket::TcpClientSocket(IpV4Address serverAddress, std::uint16_t server
   m_socket = INVALID_SOCKET;
 
   // Set up client address info
-  struct addrinfo hints = {0};
-  hints.ai_family       = AF_INET;
-  hints.ai_socktype     = SOCK_STREAM;
+  struct addrinfo hints {};
+
+  hints.ai_family   = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
 
   // Resolve the server address and port, throws on failure
   auto const result = getaddrinfo(m_serverAddress.toString().c_str(), std::to_string(m_port).c_str(), &hints, &m_addressInfo);
@@ -39,7 +41,7 @@ TcpClientSocket::TcpClientSocket(IpV4Address serverAddress, std::uint16_t server
     throw std::runtime_error("getaddrinfo() failed with error: " + std::to_string(result));
   }
 
-  LOG_INFO("TcpClientSocket") << "Creating socket.";
+  LOG_INFO(m_idString) << "Creating socket.";
   m_socket = socket(m_addressInfo->ai_family, m_addressInfo->ai_socktype, m_addressInfo->ai_protocol);
   if (m_socket == INVALID_SOCKET)
   {
@@ -50,7 +52,7 @@ TcpClientSocket::TcpClientSocket(IpV4Address serverAddress, std::uint16_t server
 
 TcpClientSocket::~TcpClientSocket()
 {
-  LOG_INFO("TcpClientSocket") << "Closing TCP client socket.";
+  LOG_INFO(m_idString) << "Closing socket.";
   closeConnection();
   if (m_addressInfo != nullptr)
   {
@@ -70,10 +72,9 @@ void TcpClientSocket::connect()
   {
     auto const errorCode = getErrorCode();
 
-    std::string const errorMsg =
-      "Unable to connect to server at " + m_serverAddress.toString() + ":" + std::to_string(m_port) + " connect() failed with error " +
-      std::to_string(errorCode) + ". Make sure that the server is running and reachable under the IP address and port.";
-    LOG_ERROR("TcpClientSocket") << errorMsg;
+    std::string const errorMsg = "Unable to connect to server at " + m_serverAddress + ":" + std::to_string(m_port) + " connect() failed with error " +
+                                 std::to_string(errorCode) + ". Make sure that the server is running and reachable under the IP address and port.";
+    LOG_ERROR(m_idString) << errorMsg;
 
     closeConnection();
     m_socket = INVALID_SOCKET;

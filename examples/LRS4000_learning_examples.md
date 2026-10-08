@@ -1,8 +1,7 @@
 # LRS4000 Examples
 
-- [Diagnosis](#diagnosis)
-- [Write to PCD files](#write-to-pcd-files)
-- [More device configuration](#more-device-configuration)
+> [!NOTE]
+> This page covers LRS4000-specific examples only. The **[Shared Learning Examples](shared_learning_examples.md)** page contains additional examples that are also applicable to LRS4000.
 
 ## Diagnosis
 

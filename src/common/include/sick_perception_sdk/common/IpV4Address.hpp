@@ -9,7 +9,9 @@ SPDX-License-Identifier: MIT
 
 #include <array>
 #include <cstdint>
+#include <ostream>
 #include <string>
+#include <vector>
 
 namespace sick {
 
@@ -45,8 +47,34 @@ public:
     return m_bytes;
   }
 
+  /**
+   * @brief Returns the bytes of the IP address as a vector of 4 bytes.
+   * 
+   * @note This function allocates a new vector and copies the bytes from the internal array. 
+   *       Use `bytes()` if you want to avoid the allocation.
+   */
+  auto bytesVector() const -> std::vector<std::uint8_t>
+  {
+    return {m_bytes.begin(), m_bytes.end()};
+  }
+
 private:
   std::array<std::uint8_t, 4> m_bytes;
 };
+
+inline auto operator<<(std::ostream& stream, IpV4Address const& address) -> std::ostream&
+{
+  return stream << address.toString();
+}
+
+inline auto operator+(std::string const& lhs, IpV4Address const& rhs) -> std::string
+{
+  return lhs + rhs.toString();
+}
+
+inline auto operator+(IpV4Address const& lhs, std::string const& rhs) -> std::string
+{
+  return lhs.toString() + rhs;
+}
 
 } // namespace sick

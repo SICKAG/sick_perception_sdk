@@ -5,19 +5,23 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/drivers/LRS4000/LRS4000Driver.hpp>
 
+#include <sick_perception_sdk/common/IpV4Address.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
 #include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/DataLossMonitor.hpp>
 #include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/PointCloudConverter.hpp>
 #include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanData.hpp>
 
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <utility>
 
 namespace sick::LRS4000 {
 
-Driver::Driver(IpV4Address deviceAddress, std::function<void(std::exception_ptr)> const& onError)
-  : m_scanDataReceiver(deviceAddress, onError, "ScanDataReceiver")
+Driver::Driver(IpV4Address sensorAddress, std::function<void(std::exception_ptr const&)> const& onError)
+  : m_scanDataReceiver(sensorAddress, onError, "ScanDataReceiver")
 { }
 
 Driver::~Driver()
@@ -38,9 +42,9 @@ void Driver::stop()
 // --------------------------------------------------------------
 // ScanDataReceiver
 // --------------------------------------------------------------
-Driver::ScanDataReceiver::ScanDataReceiver(IpV4Address deviceAddress, BaseT::ErrorCallback onError, std::string loggerName)
-  : BaseT(onError, loggerName)
-  , m_deviceAddress(std::move(deviceAddress))
+Driver::ScanDataReceiver::ScanDataReceiver(IpV4Address sensorAddress, BaseT::ErrorCallback onError, std::string loggerName)
+  : BaseT(std::move(onError), std::move(loggerName))
+  , m_sensorAddress(sensorAddress)
 { }
 
 auto Driver::ScanDataReceiver::setup(
@@ -51,10 +55,10 @@ auto Driver::ScanDataReceiver::setup(
 ) -> ScanDataReceiver&
 {
   BaseT::setup(
-    [this](compact::scan_data::ScanData const& data) {
+    [this](compact::scan_data::ScanData const& data) -> void {
       this->multiplexScanData(data);
     },
-    m_deviceAddress,
+    m_sensorAddress,
     sensorPort,
     firstDataTimeout,
     newDataTimeout,
@@ -77,7 +81,7 @@ void Driver::ScanDataReceiver::multiplexScanData(compact::scan_data::ScanData co
         callback(lossCounts);
       }
     }
-    catch (std::exception_ptr exception)
+    catch (std::exception_ptr const& exception)
     {
       m_onError(exception);
     }

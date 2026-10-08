@@ -1,7 +1,7 @@
 # picoScan100 Learning Examples
 
-- [Diagnosis](#diagnosis)
-- [More device configuration](#more-device-configuration)
+> [!NOTE]
+> This page covers picoScan100-specific examples only. The **[Shared Learning Examples](shared_learning_examples.md)** page contains the majority of examples, most of which are also applicable to picoScan100.
 
 ## Diagnosis
 

@@ -48,10 +48,3 @@ private:
 auto SDK_EXPORT operator<<(std::ostream& stream, AngularVelocity const& angularVelocity) -> std::ostream&;
 
 } // namespace sick
-
-namespace std {
-
-// NOLINTNEXTLINE(readability-identifier-naming): to_string is standard library style
-auto SDK_EXPORT to_string(sick::AngularVelocity const& angularVelocity) -> std::string;
-
-} // namespace std

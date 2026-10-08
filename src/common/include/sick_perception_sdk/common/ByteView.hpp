@@ -63,7 +63,7 @@ public:
 
   /**
    * @brief Accesses the byte at the specified index without bounds checking.
-   * 
+   *
    * @note Accessing an out-of-range index or if the internal data pointer is nullptr results in undefined behavior (similar to std::vector::operator[]).
    */
   auto operator[](std::size_t index) const -> std::uint8_t
@@ -134,7 +134,7 @@ public:
     {
       throw std::out_of_range("ByteView::subview: offset out of range");
     }
-    if (offset + count > m_size)
+    if (count > m_size - offset)
     {
       throw std::out_of_range("ByteView::subview: count out of range");
     }

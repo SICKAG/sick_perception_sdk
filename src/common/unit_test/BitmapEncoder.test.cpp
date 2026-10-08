@@ -87,6 +87,48 @@ TEST(BitmapEncoder, encodeGrayscaleBmp_1D_scales_values_correctly)
   EXPECT_EQ(result[kBmpHeaderSize + 5], 128); // 32768 -> 128
 }
 
+TEST(BitmapEncoder, encodeGrayscaleBmp_1D_estimates_min_max_when_not_provided)
+{
+  std::size_t width               = 2;
+  std::size_t height              = 2;
+  std::vector<std::uint16_t> data = {10, 20, 30, 40};
+
+  auto const result = encodeGrayscaleBmp(data, width, height);
+
+  // Estimated range is [10, 40]
+  // Bottom row in file (image row 1): 30 -> 170, 40 -> 255
+  EXPECT_EQ(result[kBmpHeaderSize + 0], 170);
+  EXPECT_EQ(result[kBmpHeaderSize + 1], 255);
+  // Top row in file (image row 0): 10 -> 0, 20 -> 85
+  EXPECT_EQ(result[kBmpHeaderSize + 4], 0);
+  EXPECT_EQ(result[kBmpHeaderSize + 5], 85);
+}
+
+TEST(BitmapEncoder, encodeGrayscaleBmp_1D_sets_padding_bytes_to_zero)
+{
+  // Width 3 requires one padding byte per row for 8-bit BMP alignment.
+  std::size_t width               = 3;
+  std::size_t height              = 2;
+  std::vector<std::uint16_t> data = {10, 20, 30, 40, 50, 60};
+
+  auto const result = encodeGrayscaleBmp(data, width, height, {{0, 60}});
+
+  // Row 0 padding byte
+  EXPECT_EQ(result[kBmpHeaderSize + 3], 0);
+  // Row 1 padding byte (next row starts at +4 because padded row size is 4)
+  EXPECT_EQ(result[kBmpHeaderSize + 7], 0);
+}
+
+TEST(BitmapEncoder, encodeGrayscaleBmp_1D_handles_extreme_int32_range)
+{
+  std::vector<std::int32_t> data = {std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()};
+
+  auto const result = encodeGrayscaleBmp(data, 2, 1, {{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()}});
+
+  EXPECT_EQ(result[kBmpHeaderSize + 0], 0);
+  EXPECT_EQ(result[kBmpHeaderSize + 1], 255);
+}
+
 TEST(BitmapEncoder, encodeGrayscaleBmp_1D_clamps_out_of_range_values)
 {
   std::vector<std::int16_t> data = {-100, 50, 200, 300};
@@ -112,6 +154,13 @@ TEST(BitmapEncoder, encodeGrayscaleBmp_1D_throws_on_size_mismatch)
   std::vector<std::uint8_t> data(10, 0);
 
   EXPECT_THROW(encodeGrayscaleBmp(data, 5, 5, {{0, 255}}), std::invalid_argument);
+}
+
+TEST(BitmapEncoder, encodeGrayscaleBmp_1D_throws_on_empty_input_data)
+{
+  std::vector<std::uint8_t> data;
+
+  EXPECT_THROW(encodeGrayscaleBmp(data, 1, 1, {{0, 255}}), std::invalid_argument);
 }
 
 TEST(BitmapEncoder, encodeGrayscaleBmp_1D_throws_on_invalid_range)
@@ -159,7 +208,22 @@ TEST(BitmapEncoder, encodeGrayscaleBmp_2D_converts_column_major_to_row_major)
   EXPECT_EQ(result[kBmpHeaderSize + 6], 50);
 }
 
-TEST(BitmapEncoder, encodeGrayscaleBmp_2dd_throws_on_empty_data)
+TEST(BitmapEncoder, encodeGrayscaleBmp_2D_estimates_min_max_when_not_provided)
+{
+  std::vector<std::vector<std::uint8_t>> data = {{10, 20}, {30, 40}};
+
+  auto const result = encodeGrayscaleBmp(data);
+
+  // Estimated range is [10, 40]
+  // Bottom row in file (image row 1): 20 -> 85, 40 -> 255
+  EXPECT_EQ(result[kBmpHeaderSize + 0], 85);
+  EXPECT_EQ(result[kBmpHeaderSize + 1], 255);
+  // Top row in file (image row 0): 10 -> 0, 30 -> 170
+  EXPECT_EQ(result[kBmpHeaderSize + 4], 0);
+  EXPECT_EQ(result[kBmpHeaderSize + 5], 170);
+}
+
+TEST(BitmapEncoder, encodeGrayscaleBmp_2D_throws_on_empty_data)
 {
   std::vector<std::vector<std::uint8_t>> emptyOuter;
   std::vector<std::vector<std::uint8_t>> emptyInner = {{}};
@@ -173,6 +237,14 @@ TEST(BitmapEncoder, encodeGrayscaleBmp_2D_throws_on_non_uniform_columns)
   std::vector<std::vector<std::uint8_t>> data = {{10, 20}, {30, 40, 50}}; // Different column heights
 
   EXPECT_THROW(encodeGrayscaleBmp(data, {{0, 255}}), std::invalid_argument);
+}
+
+TEST(BitmapEncoder, encodeGrayscaleBmp_2D_throws_on_invalid_range)
+{
+  std::vector<std::vector<std::uint8_t>> data = {{10, 20}, {30, 40}};
+
+  EXPECT_THROW(encodeGrayscaleBmp(data, {{100, 100}}), std::invalid_argument);
+  EXPECT_THROW(encodeGrayscaleBmp(data, {{100, 50}}), std::invalid_argument);
 }
 
 TEST(BitmapEncoder, encodeGrayscaleBmp_creates_valid_grayscale_color_table)

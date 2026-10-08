@@ -34,7 +34,7 @@ public:
     std::uint16_t receiverPort,
     std::size_t receiveBufferSize,
     std::function<void(typename ParserT::DataT)> onNewData,
-    std::function<void(std::exception_ptr)> onError,
+    std::function<void(std::exception_ptr const&)> onError,
     std::chrono::milliseconds firstDataTimeout = std::chrono::milliseconds(0),
     std::chrono::milliseconds newDataTimeout   = std::chrono::milliseconds(0),
     std::string streamName                     = "UdpReceiverThread"
@@ -57,7 +57,7 @@ public:
       throw std::runtime_error("Socket is not initialized. Cannot join a multicast group.");
     }
     auto* udpSocket = dynamic_cast<UdpListeningSocket*>(this->m_socket.get());
-    if (!udpSocket)
+    if (udpSocket == nullptr)
     {
       throw std::runtime_error("Socket is not a UdpListeningSocket. Cannot join a multicast group.");
     }

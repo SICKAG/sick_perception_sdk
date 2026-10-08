@@ -164,6 +164,45 @@ TEST(SubByteArrayConverterTest, throws_when_not_enough_data)
   EXPECT_THROW((convertSubByteArray<std::uint16_t, 4>(ByteView {data}, 3, result)), std::invalid_argument);
 }
 
+TEST(SubByteArrayConverterTest, throws_when_not_enough_data_whole_byte_path)
+{
+  // Whole-byte fast path (SourceTypeSizeInBits == sizeof(TargetT) * 8).
+  // Two bytes provided but three 8-bit values requested -> must not read past the end.
+  std::vector<std::uint8_t> const data {0x12, 0x34};
+  std::vector<std::uint8_t> result;
+
+  EXPECT_THROW((convertSubByteArray<std::uint8_t, 8>(ByteView {data}, 3, result)), std::invalid_argument);
+}
+
+TEST(SubByteArrayConverterTest, throws_when_not_enough_data_whole_byte_path_16bit)
+{
+  // Whole-byte fast path for a 16-bit target.
+  // Two bytes provided (one value) but two 16-bit values requested -> must not read past the end.
+  std::vector<std::uint8_t> const data {0x34, 0x12};
+  std::vector<std::uint16_t> result;
+
+  EXPECT_THROW((convertSubByteArray<std::uint16_t, 16>(ByteView {data}, 2, result)), std::invalid_argument);
+}
+
+TEST(SubByteArrayConverterTest, throws_when_not_enough_data_12bit_path_even_count)
+{
+  // 12-bit fast path: two 12-bit values need 3 bytes, but only 2 are provided.
+  std::vector<std::uint8_t> const data {0xBC, 0x3A};
+  std::vector<std::uint16_t> result;
+
+  EXPECT_THROW((convertSubByteArray<std::uint16_t, 12>(ByteView {data}, 2, result)), std::invalid_argument);
+}
+
+TEST(SubByteArrayConverterTest, throws_when_not_enough_data_12bit_path_odd_count)
+{
+  // 12-bit fast path with an odd element count: three 12-bit values need 5 bytes (45 bits -> 6 bytes rounded),
+  // but only 3 are provided. The odd-element read must not access bytes past the end.
+  std::vector<std::uint8_t> const data {0xBC, 0x3A, 0x12};
+  std::vector<std::uint16_t> result;
+
+  EXPECT_THROW((convertSubByteArray<std::uint16_t, 12>(ByteView {data}, 3, result)), std::invalid_argument);
+}
+
 TEST(SubByteArrayConverterTest, calculates_correct_byte_count_with_padding)
 {
   // Three 5-bit values = 15 bits total, requires 2 bytes (with 1 bit padding)

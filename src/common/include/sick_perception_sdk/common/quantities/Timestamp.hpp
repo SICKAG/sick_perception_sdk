@@ -27,7 +27,7 @@ class SDK_EXPORT Timestamp
 public:
   using value_type = std::uint64_t;
 
-  static Timestamp now()
+  static auto now() -> Timestamp
   {
     auto const now = std::chrono::steady_clock::now().time_since_epoch();
     return Timestamp::fromMicrosecondsSinceEpoch(std::chrono::duration_cast<std::chrono::microseconds>(now).count());
@@ -123,12 +123,5 @@ constexpr auto min(Timestamp const& lhs, Timestamp const& rhs) -> Timestamp
 }
 
 } // namespace sick
-
-namespace std {
-
-// NOLINTNEXTLINE(readability-identifier-naming): to_string is standard library style
-auto SDK_EXPORT to_string(sick::Timestamp const& timestamp) -> std::string;
-
-} // namespace std
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)

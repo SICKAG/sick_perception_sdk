@@ -20,7 +20,7 @@ class StreamReceiver
 public:
   static constexpr std::chrono::milliseconds kDefaultFirstDataTimeout {3000};
   static constexpr std::chrono::milliseconds kDefaultNewDataTimeout {1000};
-  using ErrorCallback = std::function<void(std::exception_ptr)>;
+  using ErrorCallback = std::function<void(std::exception_ptr const&)>;
 
   explicit StreamReceiver(ErrorCallback onError, std::string loggerName)
     : m_onError(std::move(onError))

@@ -14,7 +14,7 @@ SPDX-License-Identifier: MIT
 namespace sick::httplib_client {
 
 HttpClient::HttpClient(IpV4Address address, std::uint16_t port)
-  : HttpClientBase("http://" + address.toString() + ":" + std::to_string(port))
+  : HttpClientBase("http://" + address + ":" + std::to_string(port))
 { }
 
 } // namespace sick::httplib_client

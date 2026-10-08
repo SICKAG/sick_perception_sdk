@@ -36,7 +36,7 @@ public:
   using ScanDataReceiver = compact::UdpScanDataReceiver;
 
   /** @param onError Callback function that is called when an unhandled exception is thrown */
-  explicit Driver(std::function<void(std::exception_ptr)> const& onError = [](std::exception_ptr) -> void {});
+  explicit Driver(std::function<void(std::exception_ptr const&)> const& onError = [](auto) -> void { });
 
   Driver(Driver const&)                    = delete;
   auto operator=(Driver const&) -> Driver& = delete;

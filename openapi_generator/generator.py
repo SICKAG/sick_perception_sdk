@@ -1,5 +1,6 @@
 from io import TextIOWrapper
 import os
+import glob
 from typing import List, Optional, Set, Dict, Tuple
 from datetime import datetime
 from collections import defaultdict
@@ -8,9 +9,21 @@ from packaging.version import Version
 
 from objects import DeviceMetadata, EndpointDescription, EndpointMethodDescription, ObjectDescription, FieldDescription, EnumDescription
 
-
 DATA_OBJECT_OUT_DIR = os.path.join("src/sensor_configuration/include/sick_perception_sdk/sensor_configuration/api")
 MEMBER_PREFIX = "_"
+
+# Output directory for generated Endpoints implementation (.cpp) files and the CMake source manifest.
+GENERATED_SRC_OUT_DIR = os.path.join("src/sensor_configuration/generated")
+
+
+def clean_generated_files():
+    """Delete all previously generated files (*.g.*) from the output directories."""
+    removed = 0
+    for root_dir in (DATA_OBJECT_OUT_DIR, GENERATED_SRC_OUT_DIR):
+        for file_path in glob.glob(os.path.join(root_dir, "**", "*.g.*"), recursive=True):
+            os.remove(file_path)
+            removed += 1
+    print(f"ℹ️  Cleaned up {removed} previously generated file(s).")
 
 
 def _get_namespace_name(metadata: DeviceMetadata) -> str:
@@ -323,7 +336,7 @@ def _generate_ctors(f: TextIOWrapper, name, obj: ObjectDescription, indent: int)
         f.write(f"{indent_str}    : ")
         inits = []
         for field in obj.fields:
-            if field.type == "std::string" or field.type.startswith("NumericRange"):
+            if field.type == "std::string":
                 inits.append(f"{MEMBER_PREFIX}{field.name}(std::move({field.name}))")
             else:
                 inits.append(f"{MEMBER_PREFIX}{field.name}({field.name})")
@@ -426,117 +439,311 @@ def _collect_includes(obj: ObjectDescription, includes: Set[str]) -> None:
         _collect_includes(sub_obj, includes)
 
 
-def generate_aggregate_headers(all_endpoints: List[Tuple[List[EndpointDescription], DeviceMetadata]]):
+# =============================================================================
+# Endpoints class generation (typed per-device/version facade over SopasClient)
+# =============================================================================
+
+
+def _lower_camel(name: str) -> str:
+    """Lower-case the first character of an endpoint name to form a SOPAS method name."""
+    if not name:
+        return name
+    return name[0].lower() + name[1:]
+
+
+def _upper_camel(name: str) -> str:
+    """Upper-case the first character of an endpoint name so 'get'/'set' prefixes read as camelCase."""
+    if not name:
+        return name
+    return name[0].upper() + name[1:]
+
+
+def _single_field(payload: Optional[ObjectDescription]) -> Optional[FieldDescription]:
     """
-    Generate aggregate headers for variants/families with the `latest` namespace alias.
+    Return the sole field of a payload when it wraps exactly one scalar value.
 
-    For families WITH variants: generates api/{family}/{variant}.g.hpp
-    For families WITHOUT variants: generates api/{family}.g.hpp
-
-    Each header includes all firmware version headers and defines `latest` alias
-    pointing to the semantically highest version.
+    This is used to unwrap single-field payloads so callers can use the value directly instead of
+    reaching through a struct member (e.g. `getFirmwareVersion()` returns the string directly instead
+    of a struct with a single `_FirmwareVersion` member). The sole field is unwrapped regardless of
+    its kind: scalar, nested enum, or nested struct (the facade returns the field type via
+    `decltype`).
     """
-    # Group by namespace_name (device_type: variant for families with variants, family for others)
-    grouped: Dict[str, List[DeviceMetadata]] = defaultdict(list)
-    for _, metadata in all_endpoints:
-        grouped[_get_namespace_name(metadata)].append(metadata)
+    if payload is None:
+        return None
+    if len(payload.fields) == 1:
+        return payload.fields[0]
+    return None
 
-    for namespace_name, metadata_list in grouped.items():
-        # Sort by semantic version to determine latest
-        sorted_metadata = sorted(metadata_list, key=lambda m: Version(m.version))
-        latest_metadata = sorted_metadata[-1]
 
-        # Determine output path
-        # For variants: api/{family}/{variant}.g.hpp
-        # For non-variants: api/{family}/{family}.g.hpp
-        if _is_variant(latest_metadata):
-            out_dir = os.path.abspath(os.path.join(DATA_OBJECT_OUT_DIR, latest_metadata.family))
-            file_name = f"{latest_metadata.device_type}.g.hpp"
+def _get_generated_src_subdir(metadata: DeviceMetadata) -> str:
+    """
+    Relative sub-directory (below GENERATED_SRC_OUT_DIR) for the generated Endpoints .cpp file.
+
+    For families WITH variants: api/{family}/{variant}/{version}
+    For families WITHOUT variants: api/{family}/{version}
+    """
+    version_dir = metadata.version.replace(".", "_")
+    if _is_variant(metadata):
+        return os.path.join("api", metadata.family, metadata.device_type, version_dir)
+    else:
+        return os.path.join("api", metadata.family, version_dir)
+
+
+def _endpoint_source_variable_name(metadata: DeviceMetadata) -> str:
+    """CMake manifest variable suffix, e.g. picoScan150_v2_3_1."""
+    return f"{_get_namespace_name(metadata)}_{_get_version_namespace(metadata)}"
+
+
+def _endpoint_methods(endpoint: EndpointDescription) -> List[Tuple[str, str]]:
+    """
+    Compute the (declaration, definition-body) pairs for a single endpoint.
+
+    Each tuple is (declaration_without_semicolon, one_line_forward_call). The declaration is emitted
+    verbatim in the header (with a trailing ';') and as the signature in the .cpp (with the method
+    name qualified by 'Endpoints::').
+    """
+    methods: List[Tuple[str, str]] = []
+    name = endpoint.class_name
+    payload = f"api::rest::{name}"
+
+    if endpoint.is_sopas_method:
+        method_name = _lower_camel(name)
+        has_request = endpoint.post is not None and endpoint.post.request_payload is not None
+        has_response = endpoint.post is not None and endpoint.post.response_payload is not None
+
+        response_field = _single_field(endpoint.post.response_payload) if has_response else None
+        if response_field is not None:
+            response_member = f"{MEMBER_PREFIX}{response_field.name}"
+            response_type = f"decltype({payload}::Post::Response::{response_member})"
         else:
-            out_dir = os.path.abspath(os.path.join(DATA_OBJECT_OUT_DIR, latest_metadata.family))
-            file_name = f"{latest_metadata.family}.g.hpp"
+            response_type = f"{payload}::Post::Response"
 
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-
-        full_file_name = os.path.join(out_dir, file_name)
-        version_namespace = _get_version_namespace(latest_metadata)
-        print(f"ℹ️  Generating aggregate header '{file_name}' with latest = {version_namespace}...")
-
-        with open(full_file_name, "w") as f:
-            # File header
-            f.write(f"/*\n")
-            f.write(f"Copyright (c) {datetime.now().strftime('%Y')} SICK AG\n")
-            f.write(f"SPDX-License-Identifier: MIT\n")
-            f.write(f"*/\n")
-            f.write(f"\n")
-            f.write(f"/**\n")
-            f.write(f" * @file {file_name} Aggregate header for {namespace_name}.\n")
-            f.write(f" * @warning This file was auto-generated. Do not edit manually!\n")
-            f.write(f" */\n")
-            f.write(f"#pragma once\n")
-            f.write(f"\n")
-
-            # Include all version headers (sorted by version)
-            for metadata in sorted_metadata:
-                version_dir = metadata.version.replace(".", "_")
-                if _is_variant(metadata):
-                    include_path = f"sick_perception_sdk/sensor_configuration/api/{metadata.family}/{metadata.device_type}/{version_dir}.g.hpp"
-                else:
-                    include_path = f"sick_perception_sdk/sensor_configuration/api/{metadata.family}/{version_dir}.g.hpp"
-                f.write(f"#include <{include_path}>\n")
-
-            f.write(f"\n")
-
-    # Also generate aggregate JSON headers
-    _generate_aggregate_json_headers(all_endpoints)
-
-
-def _generate_aggregate_json_headers(all_endpoints: List[Tuple[List[EndpointDescription], DeviceMetadata]]):
-    """Generate aggregate JSON headers matching the pattern of API headers."""
-    # Group by namespace_name (device_type)
-    grouped: Dict[str, List[DeviceMetadata]] = defaultdict(list)
-    for _, metadata in all_endpoints:
-        grouped[_get_namespace_name(metadata)].append(metadata)
-
-    for namespace_name, metadata_list in grouped.items():
-        sorted_metadata = sorted(metadata_list, key=lambda m: Version(m.version))
-        latest_metadata = sorted_metadata[-1]
-
-        # Determine output path
-        if _is_variant(latest_metadata):
-            out_dir = os.path.abspath(os.path.join(DATA_OBJECT_OUT_DIR, latest_metadata.family))
-            file_name = f"{latest_metadata.device_type}.nlohmann_json.g.hpp"
+        request_field = _single_field(endpoint.post.request_payload) if has_request else None
+        if request_field is not None:
+            request_member = f"{MEMBER_PREFIX}{request_field.name}"
+            request_param = f"decltype({payload}::Post::Request::{request_member}) const& value"
+            request_arg = f"{payload}::Post::Request{{value}}"
         else:
-            out_dir = os.path.abspath(os.path.join(DATA_OBJECT_OUT_DIR, latest_metadata.family))
-            file_name = f"{latest_metadata.family}.nlohmann_json.g.hpp"
+            request_param = f"{payload}::Post::Request const& request"
+            request_arg = "request"
 
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
+        if has_request and has_response:
+            decl = f"auto {method_name}({request_param}) const -> {response_type}"
+            call = f"m_sopasClient->invokeMethod<{payload}>({request_arg})"
+            body = f"return {call}{'.' + response_member if response_field is not None else ''};"
+        elif has_request and not has_response:
+            decl = f"void {method_name}({request_param}) const"
+            body = f"m_sopasClient->invokeMethodWithoutResponse<{payload}>({request_arg});"
+        elif not has_request and has_response:
+            decl = f"auto {method_name}() const -> {response_type}"
+            call = f"m_sopasClient->invokeMethodWithoutRequest<{payload}>()"
+            body = f"return {call}{'.' + response_member if response_field is not None else ''};"
+        else:
+            decl = f"void {method_name}() const"
+            body = f"m_sopasClient->invokeMethodWithoutRequestAndResponse<{payload}>();"
+        methods.append((decl, body))
+        return methods
 
-        full_file_name = os.path.join(out_dir, file_name)
-        print(f"ℹ️  Generating aggregate JSON header '{file_name}'...")
+    # Non-method endpoint: variable read and/or write.
+    if endpoint.get is not None and endpoint.get.response_payload is not None:
+        field = _single_field(endpoint.get.response_payload)
+        if field is not None:
+            member = f"{MEMBER_PREFIX}{field.name}"
+            decl = f"auto get{_upper_camel(name)}() const -> decltype({payload}::Get::Response::{member})"
+            body = f"return m_sopasClient->readVariable<{payload}>().{member};"
+        else:
+            decl = f"auto get{_upper_camel(name)}() const -> {payload}::Get::Response"
+            body = f"return m_sopasClient->readVariable<{payload}>();"
+        methods.append((decl, body))
 
-        with open(full_file_name, "w") as f:
-            f.write(f"/*\n")
-            f.write(f"Copyright (c) {datetime.now().strftime('%Y')} SICK AG\n")
-            f.write(f"SPDX-License-Identifier: MIT\n")
-            f.write(f"*/\n")
-            f.write(f"\n")
-            f.write(f"/**\n")
-            f.write(f" * @file {file_name} Aggregate JSON header for {namespace_name}.\n")
-            f.write(f" * @warning This file was auto-generated. Do not edit manually!\n")
-            f.write(f" */\n")
-            f.write(f"#pragma once\n")
-            f.write(f"\n")
+    if endpoint.post is not None and endpoint.post.request_payload is not None:
+        request_field = _single_field(endpoint.post.request_payload)
+        if request_field is not None:
+            request_member = f"{MEMBER_PREFIX}{request_field.name}"
+            request_type = f"decltype({payload}::Post::Request::{request_member})"
+            decl = f"void set{_upper_camel(name)}({request_type} const& value) const"
+            body = f"m_sopasClient->writeVariable<{payload}>({payload}::Post::Request{{value}});"
+        else:
+            decl = f"void set{_upper_camel(name)}({payload}::Post::Request const& request) const"
+            body = f"m_sopasClient->writeVariable<{payload}>(request);"
+        methods.append((decl, body))
 
-            # Include all version JSON headers
-            for metadata in sorted_metadata:
-                version_dir = metadata.version.replace(".", "_")
-                if _is_variant(metadata):
-                    include_path = f"sick_perception_sdk/sensor_configuration/api/{metadata.family}/{metadata.device_type}/{version_dir}.nlohmann_json.g.hpp"
-                else:
-                    include_path = f"sick_perception_sdk/sensor_configuration/api/{metadata.family}/{version_dir}.nlohmann_json.g.hpp"
-                f.write(f"#include <{include_path}>\n")
+    return methods
 
-            f.write(f"\n")
+
+def generate_endpoints(endpoints: List[EndpointDescription], metadata: DeviceMetadata):
+    """
+    Generate the typed `Endpoints` facade (header + implementation) for a device/version.
+
+    - `Endpoints.g.hpp` (in the include tree) declares one method per endpoint. It includes only the
+      plain payload struct aggregate (no nlohmann/json) and forward-declares `SopasClient`.
+    - `Endpoints.g.cpp` (in the generated source tree) includes `SopasClient.hpp` and the nlohmann
+      serializer aggregate, defining every method as a one-line forward to the engine. This keeps the
+      nlohmann/json dependency private to the SDK library build.
+    """
+    namespace_name = _get_namespace_name(metadata)
+    version_namespace = _get_version_namespace(metadata)
+    version_dir = metadata.version.replace(".", "_")
+    include_prefix = _get_include_prefix(metadata)
+    # The version aggregate headers live next to (not inside) the per-version include directory,
+    # e.g. api/{family}[/{variant}]/{version}.g.hpp.
+    aggregate_prefix = include_prefix.rsplit("/", 1)[0]
+
+    # Collect method declarations/definitions across all endpoints, sorted alphabetically by
+    # method name so the generated output has a stable, readable ordering.
+    all_methods: List[Tuple[str, str]] = []
+    for endpoint in endpoints:
+        all_methods.extend(_endpoint_methods(endpoint))
+    all_methods.sort(key=lambda method: _method_name(method[0]))
+
+    # ---- Header (Endpoints.g.hpp) in the include tree ------------------------
+    header_out_dir = _get_output_dir(metadata)
+    if not os.path.exists(header_out_dir):
+        os.makedirs(header_out_dir)
+
+    header_name = "Endpoints.g.hpp"
+    print(f"ℹ️  Generating '{header_name}' for {namespace_name} {version_namespace}...")
+    with open(os.path.join(header_out_dir, header_name), "w") as f:
+        _generate_file_header(f, header_name, metadata, None)
+
+        f.write("#include <sick_perception_sdk/common/export.hpp>\n")
+        f.write("#include <sick_perception_sdk/sensor_configuration/api/UserLevel.hpp>\n")
+        f.write(f"#include <{aggregate_prefix}/{version_dir}.g.hpp>\n")
+        f.write("#include <sick_perception_sdk/sensor_configuration/HttpClient/IHttpClient.hpp>\n")
+        f.write("\n")
+        f.write("#include <memory>\n")
+        f.write("#include <string>\n")
+        f.write("\n")
+
+        f.write("namespace sick {\n")
+        f.write("class SopasClient;\n")
+        f.write("} // namespace sick\n")
+        f.write("\n")
+
+        f.write(f"namespace sick::{namespace_name}::{version_namespace} {{\n\n")
+
+        f.write("/**\n")
+        f.write(" * @brief Typed access to all documented REST endpoints of this device/version.\n")
+        f.write(" *\n")
+        f.write(" * Each method forwards to the SopasClient engine. The nlohmann/json dependency is kept private\n")
+        f.write(" * to the SDK library build, so including this header does not pull in nlohmann/json.\n")
+        f.write(" */\n")
+        f.write("class SDK_EXPORT Endpoints\n{\npublic:\n")
+        f.write("  explicit Endpoints(std::shared_ptr<IHttpClient> httpClient, UserLevel userLevel, std::string password);\n\n")
+        for decl, _ in all_methods:
+            f.write(f"  {decl};\n")
+        f.write("\nprotected:\n")
+        f.write("  std::unique_ptr<SopasClient> m_sopasClient;\n")
+        f.write("};\n\n")
+
+        f.write(f"}} // namespace sick::{namespace_name}::{version_namespace}\n")
+
+    # ---- Implementation (Endpoints.g.cpp) in the generated source tree -------
+    src_subdir = _get_generated_src_subdir(metadata)
+    src_out_dir = os.path.abspath(os.path.join(GENERATED_SRC_OUT_DIR, src_subdir))
+    if not os.path.exists(src_out_dir):
+        os.makedirs(src_out_dir)
+
+    src_name = "Endpoints.g.cpp"
+    print(f"ℹ️  Generating '{src_name}' for {namespace_name} {version_namespace}...")
+    with open(os.path.join(src_out_dir, src_name), "w") as f:
+        f.write("/*\n")
+        f.write(f"Copyright (c) {datetime.now().strftime('%Y')} SICK AG\n")
+        f.write("SPDX-License-Identifier: MIT\n")
+        f.write("*/\n\n")
+        f.write("/**\n")
+        f.write(f" * @file {src_name} Generated Endpoints implementation.\n")
+        f.write(f" * @warning This file was generated for device '{namespace_name}' version '{metadata.version}'.\n")
+        f.write(" * Do not edit manually!\n")
+        f.write(" */\n\n")
+
+        f.write(f"#include <{include_prefix}/Endpoints.g.hpp>\n\n")
+        f.write("#include <sick_perception_sdk/sensor_configuration/SopasClientImpl.hpp>\n")
+        f.write("#include <sick_perception_sdk/sensor_configuration/api/UserLevel.hpp>\n")
+        f.write(f"#include <{aggregate_prefix}/{version_dir}.nlohmann_json.g.hpp>\n")
+        f.write("#include <sick_perception_sdk/sensor_configuration/HttpClient/IHttpClient.hpp>\n")
+        f.write("\n")
+        f.write("#include <memory>\n")
+        f.write("#include <utility>\n")
+        f.write("\n")
+
+        f.write(f"namespace sick::{namespace_name}::{version_namespace} {{\n\n")
+
+        f.write("Endpoints::Endpoints(std::shared_ptr<IHttpClient> httpClient, UserLevel userLevel, std::string password)\n")
+        f.write("  : m_sopasClient(std::make_unique<SopasClient>(httpClient, userLevel, password))\n")
+        f.write("{}\n\n")
+
+        for decl, body in all_methods:
+            # Qualify the method name with 'Endpoints::'. The declaration starts with the return type,
+            # so split off the first token(s) up to the method name. We insert 'Endpoints::' before the
+            # first '(' identifier by replacing the leading "auto <name>(" / "void <name>(" pattern.
+            qualified = _qualify_method_decl(decl)
+            f.write(f"{qualified}\n{{\n  {body}\n}}\n\n")
+
+        f.write(f"}} // namespace sick::{namespace_name}::{version_namespace}\n")
+
+
+def _method_name(decl: str) -> str:
+    """
+    Extract the bare method name from a member declaration.
+
+    Examples:
+      "auto getEtherIPAddress() const -> ..."  -> "getEtherIPAddress"
+      "void setEtherIPAddress(... ) const"      -> "setEtherIPAddress"
+    """
+    head = decl[: decl.index("(")]
+    return head[head.rindex(" ") + 1 :]
+
+
+def _qualify_method_decl(decl: str) -> str:
+    """
+    Turn a member declaration into an out-of-class definition signature by inserting 'Endpoints::'
+    before the method name.
+
+    Examples:
+      "auto getEtherIPAddress() const -> ..."  -> "auto Endpoints::getEtherIPAddress() const -> ..."
+      "void setEtherIPAddress(... ) const"      -> "void Endpoints::setEtherIPAddress(... ) const"
+    """
+    paren = decl.index("(")
+    head = decl[:paren]
+    tail = decl[paren:]
+    # head is like "auto getEtherIPAddress" or "void setEtherIPAddress".
+    space = head.rindex(" ")
+    return f"{head[:space]} Endpoints::{head[space + 1:]}{tail}"
+
+
+def generate_sources_manifest(all_endpoints: List[Tuple[List[EndpointDescription], DeviceMetadata]]):
+    """
+    Emit the CMake manifest that lists every generated Endpoints .cpp file.
+
+    Defines one source-list variable per device/version plus an aggregate `_ALL` variable so the
+    build can select devices individually or compile all of them.
+    """
+    out_dir = os.path.abspath(GENERATED_SRC_OUT_DIR)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    manifest_path = os.path.join(out_dir, "generated_sources.cmake")
+    print(f"ℹ️  Generating CMake source manifest '{manifest_path}'...")
+
+    per_device_vars: List[str] = []
+    lines: List[str] = []
+    lines.append("# AUTO-GENERATED by generate_openapi.sh — do not edit.\n")
+    lines.append("\n")
+
+    for _, metadata in sorted(all_endpoints, key=lambda item: _endpoint_source_variable_name(item[1])):
+        var_suffix = _endpoint_source_variable_name(metadata)
+        var_name = f"SENSOR_CONFIGURATION_GENERATED_SOURCES_{var_suffix}"
+        rel_path = os.path.join(_get_generated_src_subdir(metadata), "Endpoints.g.cpp").replace(os.sep, "/")
+        lines.append(f"set({var_name}\n")
+        lines.append(f'  "${{CMAKE_CURRENT_LIST_DIR}}/{rel_path}")\n')
+        lines.append("\n")
+        per_device_vars.append(var_name)
+
+    lines.append("set(SENSOR_CONFIGURATION_GENERATED_SOURCES_ALL\n")
+    for var_name in per_device_vars:
+        lines.append(f"  ${{{var_name}}}\n")
+    lines.append(")\n")
+
+    with open(manifest_path, "w") as f:
+        f.writelines(lines)

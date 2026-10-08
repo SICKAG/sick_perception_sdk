@@ -6,98 +6,91 @@ SPDX-License-Identifier: MIT
 // For a description of this example, refer to: examples/shared_learning_examples.md
 
 #include "../examples_helper.hpp"
-
+#include <sick_perception_sdk/common/quantities/Duration.hpp>
+#include <sick_perception_sdk/sensor_configuration/HttpClient/httplib_client/HttpClient.hpp>
+#include <sick_perception_sdk/sensor_configuration/SopasClient.hpp>
 #if defined(USE_MULTISCAN100)
 #  include <sick_perception_sdk/sensor_configuration/multiScan100/MultiScan100Configurator.hpp>
-using ConfiguratorT = sick::multiScan100::v2_4_2_0R::Configurator;
+using ConfiguratorT = sick::multiScan100::v2_4_4::Configurator;
+#elif defined(USE_MULTISCAN200)
+#  include <sick_perception_sdk/sensor_configuration/multiScan200/MultiScan200Configurator.hpp>
+using ConfiguratorT = sick::multiScan200::v1_1_0::Configurator;
 #else // Default to picoScan150
 #  include <sick_perception_sdk/sensor_configuration/picoScan150/PicoScan150Configurator.hpp>
-using ConfiguratorT = sick::picoScan150::v2_2_1_0R::Configurator;
+using ConfiguratorT = sick::picoScan150::v2_3_3::Configurator;
+using EndpointsT    = sick::picoScan150::v2_3_3::Endpoints;
 #endif
 
-#include <sick_perception_sdk/sensor_configuration/HttpClient/httplib_client/HttpClient.hpp>
-
+#include <CLI/CLI.hpp>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <thread>
 
 using namespace std::chrono_literals;
-
-static void writeToFile(std::string const& filePath, std::string const& content)
-{
-  std::ofstream file(filePath, std::ios::binary);
-  if (!file.is_open())
-  {
-    throw std::runtime_error("Could not open file for writing: " + filePath);
-  }
-  file.write(content.data(), static_cast<std::streamsize>(content.size()));
-}
-
-static auto readFileContent(std::string const& filePath) -> std::string
-{
-  std::ifstream file(filePath, std::ios::binary);
-  if (!file.is_open())
-  {
-    throw std::runtime_error("Could not open file: " + filePath);
-  }
-  std::ostringstream buffer;
-  buffer << file.rdbuf();
-  return buffer.str();
-}
+using namespace sick::literals;
 
 int main(int argc, char* argv[])
 {
   sick::examples::printSdkVersion();
-  auto const deviceAddress = sick::examples::getDeviceAddress(argc, argv);
+
+  std::string filePath;
+  std::string passPhrase  = "";
+  bool downloadFromSensor = false, importIntoSensor = false;
+  auto const sensorAddress = sick::examples::getSensorAddress("Download and import configuration example", argc, argv, [&](CLI::App& app) {
+    app.add_option("-f,--file", filePath, "Path of the configuration backup file.")->required();
+    app.add_option("-p,--passphrase", passPhrase, "Passphrase for the configuration backup.")->default_val(passPhrase);
+    app.add_flag("-d,--download", downloadFromSensor, "Download a configuration backup from the sensor to a file.");
+    app.add_flag("-i,--import", importIntoSensor, "Import a configuration backup from a file into the sensor.");
+  });
+
+  if (!downloadFromSensor && !importIntoSensor)
+  {
+    std::cout << "Error: At least one of --download or --import must be specified.\n";
+    return EXIT_FAILURE;
+  }
 
   try
   {
-    auto const httpClient = std::make_shared<sick::httplib_client::HttpClient>(deviceAddress, 80);
+    auto const httpClient = std::make_shared<sick::httplib_client::HttpClient>(sensorAddress.address, sensorAddress.restApiPort);
 
     // Change the default passwords during initial commissioning to secure your device.
     // Passwords can be updated via the web browser or API.
     // For production use, store passwords in a secure vault rather than in plain text.
     ConfiguratorT configurator(httpClient, sick::UserLevel::Service, "servicelevel");
-    std::cout << "Device type: " << configurator.deviceType.get() << '\n';
+    std::cout << "Device type: " << configurator.getDeviceType() << '\n';
 
-    std::cout << "Creating backup\n";
-    configurator.post("CreateParameterBackup").withRequestPayload("Passphrase", std::string("test")).execute();
-    // Creating the backup is asynchronous; wait for it to complete
-    std::this_thread::sleep_for(1s);
+    constexpr auto timeout = 5_s;
 
-    auto const backupContent         = httpClient->get("/api/parameterbackup");
-    std::string const backupFilePath = "parameterbackup.json";
-    writeToFile(backupFilePath, backupContent);
-    std::cout << "Backup saved to " << backupFilePath << " (" << backupContent.size() << " bytes)\n";
-
-    std::cout << "LocationName: " << configurator.locationName.get() << '\n';
-    configurator.locationName.set("import_config_test");
-    std::cout << "LocationName changed to: " << configurator.locationName.get() << '\n';
-
-    std::cout << "Uploading backup\n";
-    auto const fileContent = readFileContent(backupFilePath);
-    auto const putResult   = httpClient->client().Put("/api/parameterbackup", fileContent, "application/octet-stream");
-    if (!putResult || putResult->status != 200)
+    if (downloadFromSensor)
     {
-      auto const status = putResult ? std::to_string(putResult->status) : "no response";
-      throw std::runtime_error("PUT /api/parameterbackup failed: " + status);
+      std::cout << "\nLocation name before backup: " << configurator.getLocationName() << '\n';
+      std::cout << "Creating backup with " << timeout.seconds() << " seconds timeout.\n";
+      auto const backupResult = configurator.backupParameters(passPhrase, timeout);
+
+      std::cout << "Dumping backup to " << filePath << '\n';
+      std::ofstream backupFile(filePath, std::ios::binary);
+      backupFile << backupResult;
+      backupFile.close();
     }
-    std::cout << "Backup uploaded\n";
+    if (importIntoSensor)
+    {
+      std::cout << "\nOverwriting location name to demonstrate restore...\n";
+      configurator.setLocationName("Temporary location name");
+      std::cout << "Location name after overwrite: " << configurator.getLocationName() << '\n';
 
-    std::cout << "Restoring backup\n";
-    configurator.post("RestoreParameterBackup").withRequestPayload("Passphrase", std::string("test")).execute();
-    // The restore is asynchronous; wait for it to complete
-    std::this_thread::sleep_for(1s);
-    std::cout << "Backup restored\n";
+      std::cout << "Reading backup from " << filePath << '\n';
+      std::ifstream backupFile(filePath, std::ios::binary);
+      std::string const backupResult((std::istreambuf_iterator<char>(backupFile)), std::istreambuf_iterator<char>());
+      backupFile.close();
 
-    // Optionally, persist the restored parameters on the device.
-    // If this is not done, the restored parameters will be lost after a power cycle.
-    configurator.persistParametersOnDevice();
-    std::cout << "Parameters persisted\n";
+      std::cout << "Restoring backup with " << timeout.seconds() << " seconds timeout.\n";
+      configurator.restoreParameters(backupResult, passPhrase, timeout);
 
-    std::cout << "LocationName after restore: " << configurator.locationName.get() << '\n';
+      std::cout << "LocationName after restore: " << configurator.getLocationName() << '\n';
+    }
   }
   catch (std::exception const& e)
   {
