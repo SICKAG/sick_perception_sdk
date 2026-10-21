@@ -20,6 +20,13 @@ SPDX-License-Identifier: MIT
 
 namespace sick::compact {
 
+/**
+ * @brief Receives data from a socket on a separate thread and forwards it via callbacks.
+ *
+ * The receive thread calls the virtual receive() of the derived class. To ensure that it never runs on a partially
+ * constructed or partially destroyed object, a derived class must call start() as the last statement of its
+ * constructor and stop() as the first statement of its destructor.
+ */
 template <typename DataT>
 class ReceiverThread
 {
@@ -50,7 +57,6 @@ public:
 
     LOG_INFO(this->m_streamName) << "Setting socket timeout to " << firstDataTimeout.count() << " ms.";
     m_socket->setTimeout(firstDataTimeout);
-    start();
   }
 
   ReceiverThread(ReceiverThread const&)                    = delete;
