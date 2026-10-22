@@ -51,7 +51,10 @@ public:
         newDataTimeout,
         std::move(streamName)
       )
-  { }
+  {
+    // Start only now that all members are initialized, the receive thread uses m_streamExtractor.
+    this->start();
+  }
 
   ~TcpReceiverThread() override
   {

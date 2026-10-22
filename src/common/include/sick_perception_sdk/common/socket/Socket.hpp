@@ -143,6 +143,22 @@ public:
     m_socket = INVALID_SOCKET;
   }
 
+  // Shuts down sending and receiving but keeps the socket descriptor. This makes a receive() that blocks in another
+  // thread return, which closeConnection() does not do on Linux. Unconnected UDP sockets report an error here but are
+  // shut down nevertheless, so the result is ignored.
+  void shutdownConnection(void)
+  {
+    if (m_socket == INVALID_SOCKET)
+    {
+      return;
+    }
+#ifdef _WIN32
+    ::shutdown(m_socket, SD_BOTH);
+#else
+    ::shutdown(m_socket, SHUT_RDWR);
+#endif
+  }
+
   int getErrorCode()
   {
 #ifdef _WIN32

@@ -48,7 +48,21 @@ public:
         newDataTimeout,
         std::move(streamName)
       )
-  { }
+  {
+    this->start();
+  }
+
+  ~UdpReceiverThread() override
+  {
+    // Stop the receive thread before this instance is destroyed. Otherwise the thread may call receive()
+    // while the base class destructor runs, which is a call to a pure virtual function.
+    this->stop();
+  }
+
+  UdpReceiverThread(UdpReceiverThread const&)                    = delete;
+  auto operator=(UdpReceiverThread const&) -> UdpReceiverThread& = delete;
+  UdpReceiverThread(UdpReceiverThread&&)                         = delete;
+  auto operator=(UdpReceiverThread&&) -> UdpReceiverThread&      = delete;
 
   void joinMulticastGroup(IpV4Address const& multicastGroupAddress, IpV4Address const& localInterfaceAddress)
   {
