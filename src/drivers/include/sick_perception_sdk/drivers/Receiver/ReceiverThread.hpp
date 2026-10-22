@@ -10,6 +10,7 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/socket/Socket.hpp>
 #include <sick_perception_sdk/drivers/Exceptions/Timeout.hpp>
 
+#include <atomic>
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -79,15 +80,12 @@ public:
     LOG_INFO(m_streamName) << "Stopping receive loop.";
     m_runReceiveLoop = false;
 
-    // Close the socket to abort any blocking recv() call immediately.
+    // Wake up a blocking recv() call. The socket is closed only after the receive thread has finished, so that the
+    // thread never uses a closed socket descriptor, which another thread may already have reused.
     if (m_socket)
     {
-      m_socket->closeConnection();
+      m_socket->shutdownConnection();
     }
-
-    // Clear here because this will be used by start() to determine
-    // if the receive loop is already running.
-    m_startTime = std::nullopt;
 
     if (m_receiveThread->joinable())
     {
@@ -95,6 +93,15 @@ public:
     }
 
     m_receiveThread = nullptr;
+
+    if (m_socket)
+    {
+      m_socket->closeConnection();
+    }
+
+    // Clear here because this will be used by start() to determine
+    // if the receive loop is already running. Not before joining, the receive thread reads it.
+    m_startTime = std::nullopt;
   }
 
 protected:
@@ -151,7 +158,11 @@ protected:
       LOG_FAST_LOOP_INFO(this->m_streamName) << "Received " << numberOfBytesReceived << " bytes.";
       if (numberOfBytesReceived == 0)
       {
-        this->onNoDataReceived();
+        // stop() also makes recv() return without data, which must not be reported as a timeout.
+        if (m_runReceiveLoop)
+        {
+          this->onNoDataReceived();
+        }
         return 0;
       }
       if (!this->m_lastReceiveTime.has_value())
@@ -221,7 +232,7 @@ private:
   std::optional<std::chrono::steady_clock::time_point> m_lastReceiveTime;
 
   std::unique_ptr<std::thread> m_receiveThread;
-  bool m_runReceiveLoop;
+  std::atomic<bool> m_runReceiveLoop;
   std::optional<std::chrono::steady_clock::time_point> m_startTime;
 
   static auto timeout(std::string const& message) -> std::exception_ptr
