@@ -5,15 +5,88 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/drivers/multiScan100/MultiScan100Driver.hpp>
 
-#include <exception>
-#include <functional>
+#include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
+#include <sick_perception_sdk/drivers/multiScan100/ImuReceiver.hpp>
+#include <sick_perception_sdk/drivers/multiScan100/ScanDataReceiver.hpp>
+
+#include <cstdint>
+#include <optional>
+#include <utility>
 
 namespace sick::multiScan100 {
 
-Driver::Driver(std::function<void(std::exception_ptr const&)> const& onError)
-  : m_imuReceiver(onError, "ImuReceiver")
-  , m_scanDataReceiver(onError, "ScanDataReceiver")
-{ }
+auto Config::create() -> Config
+{
+  return {};
+}
+
+auto Config::configureScanDataReceiver(ScanDataReceiverConfig config) -> Config&
+{
+  m_scanData = std::move(config);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(
+  std::uint16_t receiverPort,
+  ScanDataReceiverConfig::UnorganizedPointCloudCallback callback,
+  point_cloud::PointCloudConfiguration const& pointCloudConfiguration
+) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setReceiverPort(receiverPort).setOnNewFrameCallback(std::move(callback), pointCloudConfiguration);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(std::uint16_t receiverPort, ScanDataReceiverConfig::ScanDataCallback callback) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setReceiverPort(receiverPort).setOnNewSegmentCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::configureImuReceiver(ImuReceiverConfig config) -> Config&
+{
+  m_imu = std::move(config);
+  return *this;
+}
+
+auto Config::configureImuReceiver(std::uint16_t receiverPort, ImuReceiverConfig::DataCallback callback) -> Config&
+{
+  if (!m_imu)
+  {
+    m_imu = ImuReceiverConfig::create();
+  }
+  m_imu->setReceiverPort(receiverPort).setOnNewDataCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::scanData() const -> std::optional<ScanDataReceiverConfig> const&
+{
+  return m_scanData;
+}
+
+auto Config::imu() const -> std::optional<ImuReceiverConfig> const&
+{
+  return m_imu;
+}
+
+Driver::Driver(Config const& config)
+{
+  if (config.scanData())
+  {
+    m_scanDataReceiver.emplace(*config.scanData());
+  }
+  if (config.imu())
+  {
+    m_imuReceiver.emplace(*config.imu());
+  }
+}
 
 Driver::~Driver()
 {
@@ -22,14 +95,26 @@ Driver::~Driver()
 
 void Driver::run()
 {
-  m_imuReceiver.start();
-  m_scanDataReceiver.start();
+  if (m_scanDataReceiver)
+  {
+    m_scanDataReceiver->start();
+  }
+  if (m_imuReceiver)
+  {
+    m_imuReceiver->start();
+  }
 }
 
 void Driver::stop()
 {
-  m_imuReceiver.stop();
-  m_scanDataReceiver.stop();
+  if (m_scanDataReceiver)
+  {
+    m_scanDataReceiver->stop();
+  }
+  if (m_imuReceiver)
+  {
+    m_imuReceiver->stop();
+  }
 }
 
 } // namespace sick::multiScan100

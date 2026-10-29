@@ -7,26 +7,136 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/common/IpV4Address.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_2_imu_legacy/ImuData.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_3_ambient_light/AmbientLightData.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_6_multiScan200/DataLossMonitor.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_6_multiScan200/MultiScan200Data.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_6_multiScan200/PointCloudConverter.hpp>
+#include <sick_perception_sdk/drivers/multiScan200/AmbientLightReceiver.hpp>
+#include <sick_perception_sdk/drivers/multiScan200/ImuReceiver.hpp>
+#include <sick_perception_sdk/drivers/multiScan200/ScanDataReceiver.hpp>
 
-#include <chrono>
-#include <cstddef>
 #include <cstdint>
-#include <exception>
-#include <functional>
+#include <optional>
 #include <utility>
 
 namespace sick::multiScan200 {
 
-Driver::Driver(IpV4Address sensorAddress, std::function<void(std::exception_ptr const&)> const& onError)
-  : m_ambientLightReceiver(sensorAddress, onError, "AmbientLightReceiver")
-  , m_imuReceiver(sensorAddress, onError, "ImuReceiver")
-  , m_scanDataReceiver(sensorAddress, onError, "ScanDataReceiver")
+auto Config::create(IpV4Address sensorAddress) -> Config
+{
+  return Config(sensorAddress);
+}
+
+Config::Config(IpV4Address sensorAddress)
+  : m_sensorAddress(sensorAddress)
 { }
+
+auto Config::configureScanDataReceiver(ScanDataReceiverConfig config) -> Config&
+{
+  m_scanData = std::move(config);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(
+  std::uint16_t sensorPort,
+  ScanDataReceiverConfig::UnorganizedPointCloudCallback callback,
+  point_cloud::PointCloudConfiguration const& pointCloudConfiguration
+) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setSensorPort(sensorPort).setOnNewFrameCallback(std::move(callback), pointCloudConfiguration);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(
+  std::uint16_t sensorPort,
+  ScanDataReceiverConfig::OrganizedPointCloudCallback callback,
+  point_cloud::PointCloudConfiguration const& pointCloudConfiguration
+) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setSensorPort(sensorPort).setOnNewFrameCallback(std::move(callback), pointCloudConfiguration);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(std::uint16_t sensorPort, ScanDataReceiverConfig::ScanDataCallback callback) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setSensorPort(sensorPort).setOnNewFrameCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::configureImuReceiver(ImuReceiverConfig config) -> Config&
+{
+  m_imu = std::move(config);
+  return *this;
+}
+
+auto Config::configureImuReceiver(std::uint16_t sensorPort, ImuReceiverConfig::DataCallback callback) -> Config&
+{
+  if (!m_imu)
+  {
+    m_imu = ImuReceiverConfig::create();
+  }
+  m_imu->setSensorPort(sensorPort).setOnNewDataCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::configureAmbientLightReceiver(AmbientLightReceiverConfig config) -> Config&
+{
+  m_ambientLight = std::move(config);
+  return *this;
+}
+
+auto Config::configureAmbientLightReceiver(std::uint16_t sensorPort, AmbientLightReceiverConfig::DataCallback callback) -> Config&
+{
+  if (!m_ambientLight)
+  {
+    m_ambientLight = AmbientLightReceiverConfig::create();
+  }
+  m_ambientLight->setSensorPort(sensorPort).setOnNewDataCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::scanData() const -> std::optional<ScanDataReceiverConfig> const&
+{
+  return m_scanData;
+}
+
+auto Config::imu() const -> std::optional<ImuReceiverConfig> const&
+{
+  return m_imu;
+}
+
+auto Config::ambientLight() const -> std::optional<AmbientLightReceiverConfig> const&
+{
+  return m_ambientLight;
+}
+
+auto Config::sensorAddress() const -> IpV4Address const&
+{
+  return m_sensorAddress;
+}
+
+Driver::Driver(Config const& config)
+{
+  if (config.scanData())
+  {
+    m_scanDataReceiver.emplace(config.sensorAddress(), *config.scanData());
+  }
+  if (config.imu())
+  {
+    m_imuReceiver.emplace(config.sensorAddress(), *config.imu());
+  }
+  if (config.ambientLight())
+  {
+    m_ambientLightReceiver.emplace(config.sensorAddress(), *config.ambientLight());
+  }
+}
 
 Driver::~Driver()
 {
@@ -35,183 +145,34 @@ Driver::~Driver()
 
 void Driver::run()
 {
-  m_ambientLightReceiver.start();
-  m_imuReceiver.start();
-  m_scanDataReceiver.start();
+  if (m_scanDataReceiver)
+  {
+    m_scanDataReceiver->start();
+  }
+  if (m_imuReceiver)
+  {
+    m_imuReceiver->start();
+  }
+  if (m_ambientLightReceiver)
+  {
+    m_ambientLightReceiver->start();
+  }
 }
 
 void Driver::stop()
 {
-  m_ambientLightReceiver.stop();
-  m_imuReceiver.stop();
-  m_scanDataReceiver.stop();
-}
-
-// --------------------------------------------------------------
-// AmbientLightDataReceiver
-// --------------------------------------------------------------
-
-Driver::AmbientLightReceiver::AmbientLightReceiver(IpV4Address sensorAddress, BaseT::ErrorCallback onError, std::string loggerName)
-  : BaseT(std::move(onError), std::move(loggerName))
-  , m_sensorAddress(sensorAddress)
-{ }
-
-auto Driver::AmbientLightReceiver::setup(
-  std::uint16_t sensorPort,
-  std::chrono::milliseconds firstDataTimeout,
-  std::chrono::milliseconds newDataTimeout,
-  std::size_t receiveBufferSize
-) -> AmbientLightReceiver&
-{
-  BaseT::setup(
-    [this](compact::ambient_light::AmbientLightData const& data) -> void {
-      if (m_callback.has_value())
-      {
-        (*m_callback)(data);
-      }
-    },
-    m_sensorAddress,
-    sensorPort,
-    firstDataTimeout,
-    newDataTimeout,
-    receiveBufferSize
-  );
-  return *this;
-}
-
-auto Driver::AmbientLightReceiver::setOnNewDataCallback(DataCallback callback) -> AmbientLightReceiver&
-{
-  m_callback = std::move(callback);
-  return *this;
-}
-
-// --------------------------------------------------------------
-// ImuReceiver
-// --------------------------------------------------------------
-
-Driver::ImuReceiver::ImuReceiver(IpV4Address sensorAddress, BaseT::ErrorCallback onError, std::string loggerName)
-  : BaseT(std::move(onError), std::move(loggerName))
-  , m_sensorAddress(sensorAddress)
-{ }
-
-auto Driver::ImuReceiver::setup(
-  std::uint16_t sensorPort,
-  std::chrono::milliseconds firstDataTimeout,
-  std::chrono::milliseconds newDataTimeout,
-  std::size_t receiveBufferSize
-) -> ImuReceiver&
-{
-  BaseT::setup(
-    [this](compact::imu::ImuData const& data) -> void {
-      if (m_callback.has_value())
-      {
-        (*m_callback)(data);
-      }
-    },
-    m_sensorAddress,
-    sensorPort,
-    firstDataTimeout,
-    newDataTimeout,
-    receiveBufferSize
-  );
-  return *this;
-}
-
-auto Driver::ImuReceiver::setOnNewDataCallback(DataCallback callback) -> ImuReceiver&
-{
-  m_callback = std::move(callback);
-  return *this;
-}
-
-// --------------------------------------------------------------
-// ScanDataReceiver
-// --------------------------------------------------------------
-
-Driver::ScanDataReceiver::ScanDataReceiver(IpV4Address sensorAddress, BaseT::ErrorCallback onError, std::string loggerName)
-  : BaseT(std::move(onError), std::move(loggerName))
-  , m_sensorAddress(sensorAddress)
-{ }
-
-auto Driver::ScanDataReceiver::setup(
-  std::uint16_t sensorPort,
-  std::chrono::milliseconds firstDataTimeout,
-  std::chrono::milliseconds newDataTimeout,
-  std::size_t receiveBufferSize
-) -> ScanDataReceiver&
-{
-  BaseT::setup(
-    [this](compact::multiscan200::MultiScan200Data const& data) -> void {
-      this->multiplexScanData(data);
-    },
-    m_sensorAddress,
-    sensorPort,
-    firstDataTimeout,
-    newDataTimeout,
-    receiveBufferSize
-  );
-  return *this;
-}
-
-void Driver::ScanDataReceiver::multiplexScanData(compact::multiscan200::MultiScan200Data const& data)
-{
-  if (m_dataLoss)
+  if (m_scanDataReceiver)
   {
-    try
-    {
-      auto& [monitor, callback] = *m_dataLoss;
-      auto const lossCounts     = monitor.check(data);
-      if ((lossCounts.numberOfLostFrames != 0) || (lossCounts.numberOfLostTelegrams != 0) || (lossCounts.numberOfLostSegments != 0))
-      {
-        callback(lossCounts);
-      }
-    }
-    catch (std::exception_ptr const& exception)
-    {
-      m_onError(exception);
-    }
+    m_scanDataReceiver->stop();
   }
-  if (m_onNewData)
+  if (m_imuReceiver)
   {
-    (*m_onNewData)(data);
+    m_imuReceiver->stop();
   }
-  if (m_organizedPointCloud)
+  if (m_ambientLightReceiver)
   {
-    auto& [converter, callback] = *m_organizedPointCloud;
-    callback(converter.convertToOrganized(data));
+    m_ambientLightReceiver->stop();
   }
-  if (m_unorganizedPointCloud)
-  {
-    auto& [converter, callback] = *m_unorganizedPointCloud;
-    callback(converter.convertToUnorganized(data));
-  }
-}
-
-auto Driver::ScanDataReceiver::setDataLossMonitor(compact::multiscan200::DataLossMonitor monitor, DataLossCallback callback) -> ScanDataReceiver&
-{
-  m_dataLoss = std::make_pair(std::move(monitor), std::move(callback));
-  return *this;
-}
-
-auto Driver::ScanDataReceiver::setOnNewFrameCallback(ScanDataCallback callback) -> ScanDataReceiver&
-{
-  m_onNewData = std::move(callback);
-  return *this;
-}
-
-auto Driver::ScanDataReceiver::setOnNewFrameCallback(OrganizedPointCloudCallback callback, point_cloud::PointCloudConfiguration const& pointCloudConfiguration)
-  -> ScanDataReceiver&
-{
-  m_organizedPointCloud = std::make_pair(compact::multiscan200::PointCloudConverter(pointCloudConfiguration), std::move(callback));
-  return *this;
-}
-
-auto Driver::ScanDataReceiver::setOnNewFrameCallback(
-  UnorganizedPointCloudCallback callback,
-  point_cloud::PointCloudConfiguration const& pointCloudConfiguration
-) -> ScanDataReceiver&
-{
-  m_unorganizedPointCloud = std::make_pair(compact::multiscan200::PointCloudConverter(pointCloudConfiguration), std::move(callback));
-  return *this;
 }
 
 } // namespace sick::multiScan200

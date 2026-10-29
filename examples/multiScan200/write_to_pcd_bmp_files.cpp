@@ -107,23 +107,26 @@ int main(int argc, char* argv[])
   config.fields.enableTimeOffset = true;
   config.fields.enableEchoIndex  = true;
 
-  sick::multiScan200::Driver driver(sensorAddress.address, sick::examples::printExceptionMessage);
-  driver
-    .scanDataReceiver() //
-    .setup()            //
-    .setOnNewFrameCallback(
-      [outputDirectory](sick::point_cloud::OrganizedPointCloud const& framePointCloud) {
-        auto const filename = std::filesystem::path(outputDirectory) /
-                              ("multiScan200_point_cloud_" + std::to_string(framePointCloud.timestamp().microsecondsSinceEpoch()) + ".pcd");
-        writePointCloudToPCDFile(framePointCloud, filename.string());
-      },
-      config
-    )
-    .setOnNewFrameCallback([outputDirectory](sick::compact::multiscan200::MultiScan200Data const& data) {
-      auto const filename = std::filesystem::path(outputDirectory) /
-                            ("multiScan200_ambient_light_" + std::to_string(data.telegramHeader.transmitTimestamp.microsecondsSinceEpoch()) + ".bmp");
-      writeAmbientLightToBitmap(data, filename.string());
-    });
+  sick::multiScan200::Driver driver(
+    sick::multiScan200::Config::create(sensorAddress.address) //
+      .configureScanDataReceiver(
+        sick::multiScan200::ScanDataReceiverConfig::create(sick::multiScan200::ScanDataReceiverConfig::kDefaultPort)
+          .setOnNewFrameCallback(
+            [outputDirectory](sick::point_cloud::OrganizedPointCloud const& framePointCloud) {
+              auto const filename = std::filesystem::path(outputDirectory) /
+                                    ("multiScan200_point_cloud_" + std::to_string(framePointCloud.timestamp().microsecondsSinceEpoch()) + ".pcd");
+              writePointCloudToPCDFile(framePointCloud, filename.string());
+            },
+            config
+          )
+          .setOnNewFrameCallback([outputDirectory](sick::compact::multiscan200::MultiScan200Data const& data) {
+            auto const filename = std::filesystem::path(outputDirectory) /
+                                  ("multiScan200_ambient_light_" + std::to_string(data.telegramHeader.transmitTimestamp.microsecondsSinceEpoch()) + ".bmp");
+            writeAmbientLightToBitmap(data, filename.string());
+          })
+          .setOnError(sick::examples::printExceptionMessage)
+      )
+  );
   driver.run();
 
   std::this_thread::sleep_for(10s);

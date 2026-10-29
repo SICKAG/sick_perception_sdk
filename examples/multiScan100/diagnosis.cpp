@@ -133,12 +133,15 @@ int main(int argc, char* argv[])
 
   sick::compact::scan_data::DataLossMonitor dataLossMonitor {expectedFrameSequenceNumberIncrement, expectedNumberOfSegments};
 
-  sick::multiScan100::Driver driver(sick::examples::printExceptionMessage);
-  driver
-    .scanDataReceiver()                                         //
-    .setup()                                                    //
-    .setDataLossMonitor(std::move(dataLossMonitor), onDataLoss) //
-    .setOnNewSegmentCallback(onNewScanData);
+  sick::multiScan100::Driver driver(     //
+    sick::multiScan100::Config::create() //
+      .configureScanDataReceiver(
+        sick::multiScan100::ScanDataReceiverConfig::create()          //
+          .setDataLossMonitor(std::move(dataLossMonitor), onDataLoss) //
+          .setOnNewSegmentCallback(onNewScanData)
+          .setOnError(sick::examples::printExceptionMessage)
+      )
+  );
   driver.run();
   std::this_thread::sleep_for(60s);
   deviceHealthThread.join();

@@ -11,13 +11,17 @@ SPDX-License-Identifier: MIT
 #if defined(USE_MULTISCAN100)
 #  include <sick_perception_sdk/drivers/multiScan100/MultiScan100Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/multiScan100/MultiScan100Configurator.hpp>
-using ConfiguratorT = sick::multiScan100::v2_4_4::Configurator;
-using DriverT       = sick::multiScan100::Driver;
+using ConfiguratorT   = sick::multiScan100::v2_4_4::Configurator;
+using DriverT         = sick::multiScan100::Driver;
+using ConfigT         = sick::multiScan100::Config;
+using ScanDataConfigT = sick::multiScan100::ScanDataReceiverConfig;
 #else // Default to picoScan100
 #  include <sick_perception_sdk/drivers/picoScan100/PicoScan100Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/picoScan150/PicoScan150Configurator.hpp>
-using ConfiguratorT = sick::picoScan150::v2_3_3::Configurator;
-using DriverT       = sick::picoScan100::Driver;
+using ConfiguratorT   = sick::picoScan150::v2_3_3::Configurator;
+using DriverT         = sick::picoScan100::Driver;
+using ConfigT         = sick::picoScan100::Config;
+using ScanDataConfigT = sick::picoScan100::ScanDataReceiverConfig;
 #endif
 
 #include <array>
@@ -74,11 +78,14 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  DriverT driver(sick::examples::printExceptionMessage);
-  driver
-    .scanDataReceiver() //
-    .setup()            //
-    .setOnNewSegmentCallback(onNewScanData);
+  DriverT driver(     //
+    ConfigT::create() //
+      .configureScanDataReceiver(
+        ScanDataConfigT::create(scanDataPort) //
+          .setOnNewSegmentCallback(onNewScanData)
+          .setOnError(sick::examples::printExceptionMessage)
+      )
+  );
   driver.run();
 
   std::this_thread::sleep_for(10s);

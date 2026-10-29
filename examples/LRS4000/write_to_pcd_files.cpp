@@ -53,18 +53,21 @@ int main(int argc, char* argv[])
   config.fields.enableCartesian = true;
   config.fields.enableIntensity = true;
 
-  sick::LRS4000::Driver driver(sensorAddress.address, sick::examples::printExceptionMessage);
-  driver
-    .scanDataReceiver() //
-    .setup()            //
-    .setOnNewFrameCallback(
-      [outputDirectory](sick::point_cloud::UnorganizedPointCloud const& framePointCloud) {
-        auto const filePath =
-          std::filesystem::path(outputDirectory) / ("LRS4000_" + std::to_string(framePointCloud.timestamp().microsecondsSinceEpoch()) + ".pcd");
-        sick::pcd::writeToAsciiFile(framePointCloud, filePath.string());
-      },
-      config
-    );
+  sick::LRS4000::Driver driver(
+    sick::LRS4000::Config::create(sensorAddress.address) //
+      .configureScanDataReceiver(
+        sick::LRS4000::ScanDataReceiverConfig::create(sick::LRS4000::ScanDataReceiverConfig::kDefaultPort)
+          .setOnNewFrameCallback(
+            [outputDirectory](sick::point_cloud::UnorganizedPointCloud const& framePointCloud) {
+              auto const filePath =
+                std::filesystem::path(outputDirectory) / ("LRS4000_" + std::to_string(framePointCloud.timestamp().microsecondsSinceEpoch()) + ".pcd");
+              sick::pcd::writeToAsciiFile(framePointCloud, filePath.string());
+            },
+            config
+          )
+          .setOnError(sick::examples::printExceptionMessage)
+      )
+  );
 
   driver.run();
 

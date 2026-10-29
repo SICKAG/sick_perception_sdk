@@ -11,13 +11,17 @@ SPDX-License-Identifier: MIT
 #if defined(USE_MULTISCAN100)
 #  include <sick_perception_sdk/drivers/multiScan100/MultiScan100Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/multiScan100/MultiScan100Configurator.hpp>
-using ConfiguratorT = sick::multiScan100::v2_4_4::Configurator;
-using DriverT       = sick::multiScan100::Driver;
+using ConfiguratorT   = sick::multiScan100::v2_4_4::Configurator;
+using DriverT         = sick::multiScan100::Driver;
+using ConfigT         = sick::multiScan100::Config;
+using ScanDataConfigT = sick::multiScan100::ScanDataReceiverConfig;
 #else // Default to picoScan100
 #  include <sick_perception_sdk/drivers/picoScan100/PicoScan100Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/picoScan150/PicoScan150Configurator.hpp>
-using ConfiguratorT = sick::picoScan150::v2_3_3::Configurator;
-using DriverT       = sick::picoScan100::Driver;
+using ConfiguratorT   = sick::picoScan150::v2_3_3::Configurator;
+using DriverT         = sick::picoScan100::Driver;
+using ConfigT         = sick::picoScan100::Config;
+using ScanDataConfigT = sick::picoScan100::ScanDataReceiverConfig;
 #endif
 
 #include <chrono>
@@ -90,29 +94,34 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  DriverT driver1([&](std::exception_ptr const& exception) {
-    std::lock_guard<std::mutex> lock(output_mutex);
-    sick::examples::printExceptionMessageWithPort(exception, 2115);
-  });
-  DriverT driver2([&](std::exception_ptr const& exception) {
-    std::lock_guard<std::mutex> lock(output_mutex);
-    sick::examples::printExceptionMessageWithPort(exception, 2116);
-  });
-
   sick::point_cloud::PointCloudConfiguration config;
   config.fields.enableCartesian = true;
   config.fields.enableIntensity = true;
 
-  driver1
-    .scanDataReceiver() //
-    .setup(2115)        //
-    .setOnNewFrameCallback(onNewFrame1, config);
+  DriverT driver1(    //
+    ConfigT::create() //
+      .configureScanDataReceiver(
+        ScanDataConfigT::create(2115) //
+          .setOnNewFrameCallback(onNewFrame1, config)
+          .setOnError([&](std::exception_ptr const& exception) {
+            std::lock_guard<std::mutex> lock(output_mutex);
+            sick::examples::printExceptionMessageWithPort(exception, 2115);
+          })
+      )
+  );
   driver1.run();
 
-  driver2
-    .scanDataReceiver() //
-    .setup(2116)        //
-    .setOnNewFrameCallback(onNewFrame2, config);
+  DriverT driver2(    //
+    ConfigT::create() //
+      .configureScanDataReceiver(
+        ScanDataConfigT::create(2116) //
+          .setOnNewFrameCallback(onNewFrame2, config)
+          .setOnError([&](std::exception_ptr const& exception) {
+            std::lock_guard<std::mutex> lock(output_mutex);
+            sick::examples::printExceptionMessageWithPort(exception, 2116);
+          })
+      )
+  );
   driver2.run();
 
   std::this_thread::sleep_for(10s);

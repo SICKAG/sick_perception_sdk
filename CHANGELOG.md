@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Breaking Changes in library drivers
+
+- Replaced the receiver class hierarchy with composition: receivers are now configured via an immutable configuration object passed to their constructor (instead of fluent `setup()` / `setOn...Callback()` calls) and expose `start()`, `stop()`, `restart()`, `isRunning()`.
+- Receivers moved to namespace scope (no longer nested in `Driver`); TCP-based receivers now take the sensor address as a separate constructor parameter.
+- Renamed `Config::configureScanData()`, `configureImu()`, `configureEncoder()`, `configureAmbientLight()` to `configureScanDataReceiver()`, `configureImuReceiver()`, `configureEncoderReceiver()`, `configureAmbientLightReceiver()`, and the matching `*Config` types to `*ReceiverConfig` (e.g. `ScanDataConfig` → `ScanDataReceiverConfig`).
+- Receiver `onError` is no longer optional and now defaults to rethrowing the exception.
+- Removed the `scanDataReceiver()`, `imuReceiver()`, `encoderReceiver()` and `ambientLightReceiver()` accessors from the drivers.
+
+### Fixed
+
+- Crash (`pure virtual method called`) when the receive loop started from a base class constructor on a partially constructed object.
+- Multicast datagrams dropped because the multicast group was joined only after the receive loop had started.
+- Restarting a multicast UDP receiver did not rejoin the multicast group.
+- Data race between registering callbacks and the receive thread reading them.
+
 ## [2.0.0]
 
 This release includes many breaking changes to make the API of the SDK more consistent and resolve performance issues.

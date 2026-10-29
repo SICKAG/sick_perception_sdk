@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
   sick::compact::scan_data::Parser parser;
 
   // Test compilation of library drivers
-  sick::picoScan100::Driver driver;
+  sick::picoScan100::Driver driver(sick::picoScan100::Config::create());
 
   // Test compilation of library sensor_configuration
   auto const httpClient = std::make_shared<sick::httplib_client::HttpClient>("127.0.0.1", 80);
