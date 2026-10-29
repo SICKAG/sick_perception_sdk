@@ -14,9 +14,15 @@ add_sdk_compiler_warnings(TARGET ${LIB_NAME})
 
 set(LIB_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/LRS4000/LRS4000Driver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/LRS4000/ScanDataReceiver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/multiScan100/MultiScan100Driver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/multiScan200/AmbientLightReceiver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/multiScan200/ImuReceiver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/multiScan200/MultiScan200Driver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/multiScan200/ScanDataReceiver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/picoScan100/EncoderReceiver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/picoScan100/PicoScan100Driver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/Receiver/ReceiverSockets.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Receiver/UdpImuReceiver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/Receiver/UdpScanDataReceiver.cpp
 )
@@ -38,11 +44,15 @@ target_enable_clang_tidy(
     ${LIB_NAME}
   SOURCES
     ${LIB_SOURCES}
-  INCLUDE_DIRS 
+  INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
   LIBS
     ${PROJECT_NAME}::compact_format
 )
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(unit_test)
+endif()
 
 #===============================================================================
 # Installation

@@ -12,13 +12,19 @@ SPDX-License-Identifier: MIT
 #if defined(USE_MULTISCAN100)
 #  include <sick_perception_sdk/drivers/multiScan100/MultiScan100Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/multiScan100/MultiScan100Configurator.hpp>
-using ConfiguratorT = sick::multiScan100::v2_4_4::Configurator;
-using DriverT       = sick::multiScan100::Driver;
+using ConfiguratorT   = sick::multiScan100::v2_4_4::Configurator;
+using DriverT         = sick::multiScan100::Driver;
+using ConfigT         = sick::multiScan100::Config;
+using ScanDataConfigT = sick::multiScan100::ScanDataReceiverConfig;
+using ImuConfigT      = sick::multiScan100::ImuReceiverConfig;
 #else // Default to picoScan100
 #  include <sick_perception_sdk/drivers/picoScan100/PicoScan100Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/picoScan150/PicoScan150Configurator.hpp>
-using ConfiguratorT = sick::picoScan150::v2_3_3::Configurator;
-using DriverT       = sick::picoScan100::Driver;
+using ConfiguratorT   = sick::picoScan150::v2_3_3::Configurator;
+using DriverT         = sick::picoScan100::Driver;
+using ConfigT         = sick::picoScan100::Config;
+using ScanDataConfigT = sick::picoScan100::ScanDataReceiverConfig;
+using ImuConfigT      = sick::picoScan100::ImuReceiverConfig;
 #endif
 
 #include <chrono>
@@ -110,21 +116,27 @@ int main(int argc, char* argv[])
   config.filters.azimuth   = sick::Interval {-150_deg, 150_deg, false};
   config.filters.elevation = sick::Interval {-45_deg, 45_deg, false};
 
-  DriverT driver(sick::examples::printExceptionMessage);
-  driver
-    .scanDataReceiver()  //
-    .setup(scanDataPort) //
-    .setOnNewFrameCallback(onNewFrame, config);
-  driver
-    .imuReceiver()  //
-    .setup(imuPort) //
-    .setOnNewDataCallback(onNewImuData);
+  auto driverConfig =
+    ConfigT::create() //
+      .configureScanDataReceiver(
+        ScanDataConfigT::create(scanDataPort) //
+          .setOnNewFrameCallback(onNewFrame, config)
+          .setOnError(sick::examples::printExceptionMessage)
+      ) //
+      .configureImuReceiver(
+        ImuConfigT::create(imuPort) //
+          .setOnNewDataCallback(onNewImuData)
+          .setOnError(sick::examples::printExceptionMessage)
+      );
 #if defined(USE_PICOSCAN100)
-  driver
-    .encoderReceiver()  //
-    .setup(encoderPort) //
-    .setOnNewDataCallback(onNewEncoderData);
+  driverConfig.configureEncoderReceiver(
+    sick::picoScan100::EncoderReceiverConfig::create(encoderPort) //
+      .setOnNewDataCallback(onNewEncoderData)
+      .setOnError(sick::examples::printExceptionMessage)
+  );
 #endif
+
+  DriverT driver(driverConfig);
   driver.run();
 
   std::this_thread::sleep_for(10s);

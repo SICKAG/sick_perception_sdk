@@ -120,12 +120,15 @@ int main(int argc, char* argv[])
 
   sick::compact::scan_data::DataLossMonitor dataLossMonitor {expectedFrameSequenceNumberIncrement, expectedNumberOfSegments};
 
-  sick::LRS4000::Driver driver(sensorAddress.address, sick::examples::printExceptionMessage);
-  driver
-    .scanDataReceiver()                                         //
-    .setup()                                                    //
-    .setDataLossMonitor(std::move(dataLossMonitor), onDataLoss) //
-    .setOnNewFrameCallback(onNewScanData);
+  sick::LRS4000::Driver driver(                          //
+    sick::LRS4000::Config::create(sensorAddress.address) //
+      .configureScanDataReceiver(
+        sick::LRS4000::ScanDataReceiverConfig::create()               //
+          .setDataLossMonitor(std::move(dataLossMonitor), onDataLoss) //
+          .setOnNewFrameCallback(onNewScanData)
+          .setOnError(sick::examples::printExceptionMessage)
+      )
+  );
   driver.run();
   std::this_thread::sleep_for(60s);
   deviceHealthThread.join();

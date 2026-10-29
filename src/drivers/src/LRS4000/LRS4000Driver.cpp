@@ -7,22 +7,70 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/common/IpV4Address.hpp>
 #include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/DataLossMonitor.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/PointCloudConverter.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanData.hpp>
+#include <sick_perception_sdk/drivers/LRS4000/ScanDataReceiver.hpp>
 
-#include <chrono>
-#include <cstddef>
 #include <cstdint>
-#include <exception>
-#include <functional>
+#include <optional>
 #include <utility>
 
 namespace sick::LRS4000 {
 
-Driver::Driver(IpV4Address sensorAddress, std::function<void(std::exception_ptr const&)> const& onError)
-  : m_scanDataReceiver(sensorAddress, onError, "ScanDataReceiver")
+auto Config::create(IpV4Address sensorAddress) -> Config
+{
+  return Config(sensorAddress);
+}
+
+Config::Config(IpV4Address sensorAddress)
+  : m_sensorAddress(sensorAddress)
 { }
+
+auto Config::configureScanDataReceiver(ScanDataReceiverConfig config) -> Config&
+{
+  m_scanData = std::move(config);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(
+  std::uint16_t sensorPort,
+  ScanDataReceiverConfig::UnorganizedPointCloudCallback callback,
+  point_cloud::PointCloudConfiguration const& pointCloudConfiguration
+) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setSensorPort(sensorPort).setOnNewFrameCallback(std::move(callback), pointCloudConfiguration);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(std::uint16_t sensorPort, ScanDataReceiverConfig::ScanDataCallback callback) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setSensorPort(sensorPort).setOnNewFrameCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::scanData() const -> std::optional<ScanDataReceiverConfig> const&
+{
+  return m_scanData;
+}
+
+auto Config::sensorAddress() const -> IpV4Address const&
+{
+  return m_sensorAddress;
+}
+
+Driver::Driver(Config const& config)
+{
+  if (config.scanData())
+  {
+    m_scanDataReceiver.emplace(config.sensorAddress(), *config.scanData());
+  }
+}
 
 Driver::~Driver()
 {
@@ -31,91 +79,18 @@ Driver::~Driver()
 
 void Driver::run()
 {
-  m_scanDataReceiver.start();
+  if (m_scanDataReceiver)
+  {
+    m_scanDataReceiver->start();
+  }
 }
 
 void Driver::stop()
 {
-  m_scanDataReceiver.stop();
-}
-
-// --------------------------------------------------------------
-// ScanDataReceiver
-// --------------------------------------------------------------
-Driver::ScanDataReceiver::ScanDataReceiver(IpV4Address sensorAddress, BaseT::ErrorCallback onError, std::string loggerName)
-  : BaseT(std::move(onError), std::move(loggerName))
-  , m_sensorAddress(sensorAddress)
-{ }
-
-auto Driver::ScanDataReceiver::setup(
-  std::uint16_t sensorPort,
-  std::chrono::milliseconds firstDataTimeout,
-  std::chrono::milliseconds newDataTimeout,
-  std::size_t receiveBufferSize
-) -> ScanDataReceiver&
-{
-  BaseT::setup(
-    [this](compact::scan_data::ScanData const& data) -> void {
-      this->multiplexScanData(data);
-    },
-    m_sensorAddress,
-    sensorPort,
-    firstDataTimeout,
-    newDataTimeout,
-    receiveBufferSize
-  );
-
-  return *this;
-}
-
-void Driver::ScanDataReceiver::multiplexScanData(compact::scan_data::ScanData const& scanData)
-{
-  if (m_dataLoss)
+  if (m_scanDataReceiver)
   {
-    try
-    {
-      auto& [monitor, callback] = *m_dataLoss;
-      auto const lossCounts     = monitor.check(scanData);
-      if ((lossCounts.numberOfLostFrames != 0) || (lossCounts.numberOfLostTelegrams != 0) || (lossCounts.numberOfLostSegments != 0))
-      {
-        callback(lossCounts);
-      }
-    }
-    catch (std::exception_ptr const& exception)
-    {
-      m_onError(exception);
-    }
+    m_scanDataReceiver->stop();
   }
-  if (m_onNewData)
-  {
-    (*m_onNewData)(scanData);
-  }
-  if (m_pointCloud)
-  {
-    auto& [converter, callback] = *m_pointCloud;
-    callback(converter.convert(scanData));
-  }
-}
-
-auto Driver::ScanDataReceiver::setDataLossMonitor(compact::scan_data::DataLossMonitor monitor, DataLossCallback callback) -> ScanDataReceiver&
-{
-  m_dataLoss = std::make_pair(std::move(monitor), std::move(callback));
-  return *this;
-}
-
-auto Driver::ScanDataReceiver::setOnNewFrameCallback(ScanDataCallback callback) -> ScanDataReceiver&
-{
-  m_onNewData = std::move(callback);
-  return *this;
-}
-
-auto Driver::ScanDataReceiver::setOnNewFrameCallback(
-  UnorganizedPointCloudCallback callback,
-  point_cloud::PointCloudConfiguration const& pointCloudConfiguration
-) -> ScanDataReceiver&
-{
-  m_pointCloud = std::make_pair(compact::scan_data::PointCloudConverter(pointCloudConfiguration), std::move(callback));
-  return *this;
 }
 
 } // namespace sick::LRS4000

@@ -27,7 +27,7 @@ using ConfiguratorT         = sick::LRS4000::v1_10_0::Configurator;
 using SetContourRequest     = sick::LRS4000::v1_10_0::api::rest::SetFieldEvaluationContour::Post::Request;
 using GetContourRequest     = sick::LRS4000::v1_10_0::api::rest::GetFieldEvaluationContour::Post::Response;
 using FieldEvaluationResult = sick::LRS4000::v1_10_0::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult;
-using EvaluationState = sick::LRS4000::v1_10_0::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
+using EvaluationState       = sick::LRS4000::v1_10_0::api::rest::FieldEvaluationResult::Get::Response::FieldEvaluationResult::EvaluationResultListItem::State;
 #else // Default to picoScan150
 #  include <sick_perception_sdk/drivers/picoScan100/PicoScan100Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/picoScan150/PicoScan150Configurator.hpp>

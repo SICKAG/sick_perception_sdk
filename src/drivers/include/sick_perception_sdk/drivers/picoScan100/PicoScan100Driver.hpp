@@ -7,62 +7,64 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/common/export.hpp>
 #include <sick_perception_sdk/common/logging/LogLevel.hpp>
-#include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
-#include <sick_perception_sdk/compact_format/PointCloud/UnorganizedPointCloud.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/DataLossMonitor.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/PointCloudCollector.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/PointCloudConverter.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanData.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanDataParser.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_4_encoder/EncoderData.hpp>
-#include <sick_perception_sdk/compact_format/telegram_type_4_encoder/EncoderParser.hpp>
-#include <sick_perception_sdk/drivers/Receiver/UdpImuReceiver.hpp>
-#include <sick_perception_sdk/drivers/Receiver/UdpScanDataReceiver.hpp>
+#include <sick_perception_sdk/drivers/Receiver/ReceiverDefaults.hpp>
+#include <sick_perception_sdk/drivers/picoScan100/EncoderReceiver.hpp>
+#include <sick_perception_sdk/drivers/picoScan100/ImuReceiver.hpp>
+#include <sick_perception_sdk/drivers/picoScan100/ScanDataReceiver.hpp>
 
-#include <functional>
+#include <cstdint>
 #include <optional>
-#include <string>
-#include <utility>
 
 namespace sick::picoScan100 {
 
 /**
+ * @brief Selects which receivers a @ref Driver creates and how each of them is configured.
+ *
+ * A receiver that is not configured here is not created by the driver at all.
+ */
+class SDK_EXPORT Config
+{
+public:
+  static auto create() -> Config;
+
+  auto configureScanDataReceiver(ScanDataReceiverConfig config) -> Config&;
+  //! \brief Shortcut for one point cloud per frame. Keeps the rest of an existing scan data configuration.
+  auto configureScanDataReceiver(
+    std::uint16_t receiverPort,
+    ScanDataReceiverConfig::UnorganizedPointCloudCallback callback,
+    point_cloud::PointCloudConfiguration const& pointCloudConfiguration = point_cloud::PointCloudConfiguration()
+  ) -> Config&;
+  //! \brief Shortcut for every segment as the parsed telegram. Keeps the rest of an existing scan data configuration.
+  auto configureScanDataReceiver(std::uint16_t receiverPort, ScanDataReceiverConfig::ScanDataCallback callback) -> Config&;
+
+  auto configureImuReceiver(ImuReceiverConfig config) -> Config&;
+  auto configureImuReceiver(std::uint16_t receiverPort, ImuReceiverConfig::DataCallback callback) -> Config&;
+
+  auto configureEncoderReceiver(EncoderReceiverConfig config) -> Config&;
+  auto configureEncoderReceiver(std::uint16_t receiverPort, EncoderReceiverConfig::DataCallback callback) -> Config&;
+
+  [[nodiscard]] auto scanData() const -> std::optional<ScanDataReceiverConfig> const&;
+  [[nodiscard]] auto imu() const -> std::optional<ImuReceiverConfig> const&;
+  [[nodiscard]] auto encoder() const -> std::optional<EncoderReceiverConfig> const&;
+
+private:
+  Config() = default;
+
+  std::optional<ScanDataReceiverConfig> m_scanData;
+  std::optional<ImuReceiverConfig> m_imu;
+  std::optional<EncoderReceiverConfig> m_encoder;
+};
+
+/**
  * @ingroup Drivers
- * 
+ *
  * See drivers.hpp for an overview.
  */
 class SDK_EXPORT Driver
 {
 public:
-  class SDK_EXPORT EncoderReceiver : public compact::UdpStreamReceiver<compact::encoder::Parser, EncoderReceiver>
-  {
-    using BaseT = compact::UdpStreamReceiver<compact::encoder::Parser, EncoderReceiver>;
-
-  public:
-    explicit EncoderReceiver(typename BaseT::ErrorCallback onError, std::string loggerName)
-      : BaseT(std::move(onError), std::move(loggerName))
-    { }
-
-    static constexpr std::uint16_t kDefaultPort = 7504;
-
-    auto setup(
-      std::uint16_t receiverPort                 = kDefaultPort,
-      std::chrono::milliseconds firstDataTimeout = kDefaultFirstDataTimeout,
-      std::chrono::milliseconds newDataTimeout   = kDefaultNewDataTimeout,
-      std::size_t receiveBufferSize              = kDefaultReceiveBufferSize
-    ) -> EncoderReceiver&;
-
-    auto setOnNewDataCallback(DataCallback callback) -> EncoderReceiver&;
-
-  private:
-    std::optional<DataCallback> m_callback;
-  };
-
-  using ImuReceiver      = compact::UdpImuReceiver;
-  using ScanDataReceiver = compact::UdpScanDataReceiver;
-
-  /** @param onError Callback function that is called when an unhandled exception is thrown */
-  explicit Driver(std::function<void(std::exception_ptr const&)> const& onError = [](auto) -> void { });
+  //! \brief Creates exactly those receivers that @p config configures.
+  explicit Driver(Config const& config);
 
   Driver(Driver const&)                    = delete;
   auto operator=(Driver const&) -> Driver& = delete;
@@ -71,24 +73,9 @@ public:
 
   ~Driver();
 
-  auto encoderReceiver() -> EncoderReceiver&
-  {
-    return m_encoderReceiver;
-  }
-
-  auto imuReceiver() -> ImuReceiver&
-  {
-    return m_imuReceiver;
-  }
-
-  auto scanDataReceiver() -> ScanDataReceiver&
-  {
-    return m_scanDataReceiver;
-  }
-
   /**
    * @brief Listens for incoming data packets.
-   *        Forwards the received packets to the onNewData callbacks.
+   *        Forwards the received packets to the configured callbacks.
    */
   void run();
 
@@ -98,9 +85,9 @@ public:
   void stop();
 
 private:
-  EncoderReceiver m_encoderReceiver;
-  ImuReceiver m_imuReceiver;
-  ScanDataReceiver m_scanDataReceiver;
+  std::optional<ScanDataReceiver> m_scanDataReceiver;
+  std::optional<ImuReceiver> m_imuReceiver;
+  std::optional<EncoderReceiver> m_encoderReceiver;
 };
 
 } // namespace sick::picoScan100

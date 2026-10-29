@@ -5,24 +5,114 @@ SPDX-License-Identifier: MIT
 
 #include <sick_perception_sdk/drivers/picoScan100/PicoScan100Driver.hpp>
 
-#include <sick_perception_sdk/compact_format/telegram_type_4_encoder/EncoderData.hpp>
+#include <sick_perception_sdk/compact_format/PointCloud/PointCloudConfiguration.hpp>
+#include <sick_perception_sdk/drivers/picoScan100/EncoderReceiver.hpp>
+#include <sick_perception_sdk/drivers/picoScan100/ImuReceiver.hpp>
+#include <sick_perception_sdk/drivers/picoScan100/ScanDataReceiver.hpp>
 
-#include <chrono>
-#include <cstddef>
 #include <cstdint>
-#include <exception>
-#include <functional>
 #include <optional>
-#include <string>
 #include <utility>
 
 namespace sick::picoScan100 {
 
-Driver::Driver(std::function<void(std::exception_ptr const&)> const& onError)
-  : m_encoderReceiver(onError, "EncoderReceiver")
-  , m_imuReceiver(onError, "ImuReceiver")
-  , m_scanDataReceiver(onError, "ScanDataReceiver")
-{ }
+auto Config::create() -> Config
+{
+  return {};
+}
+
+auto Config::configureScanDataReceiver(ScanDataReceiverConfig config) -> Config&
+{
+  m_scanData = std::move(config);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(
+  std::uint16_t receiverPort,
+  ScanDataReceiverConfig::UnorganizedPointCloudCallback callback,
+  point_cloud::PointCloudConfiguration const& pointCloudConfiguration
+) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setReceiverPort(receiverPort).setOnNewFrameCallback(std::move(callback), pointCloudConfiguration);
+  return *this;
+}
+
+auto Config::configureScanDataReceiver(std::uint16_t receiverPort, ScanDataReceiverConfig::ScanDataCallback callback) -> Config&
+{
+  if (!m_scanData)
+  {
+    m_scanData = ScanDataReceiverConfig::create();
+  }
+  m_scanData->setReceiverPort(receiverPort).setOnNewSegmentCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::configureImuReceiver(ImuReceiverConfig config) -> Config&
+{
+  m_imu = std::move(config);
+  return *this;
+}
+
+auto Config::configureImuReceiver(std::uint16_t receiverPort, ImuReceiverConfig::DataCallback callback) -> Config&
+{
+  if (!m_imu)
+  {
+    m_imu = ImuReceiverConfig::create();
+  }
+  m_imu->setReceiverPort(receiverPort).setOnNewDataCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::configureEncoderReceiver(EncoderReceiverConfig config) -> Config&
+{
+  m_encoder = std::move(config);
+  return *this;
+}
+
+auto Config::configureEncoderReceiver(std::uint16_t receiverPort, EncoderReceiverConfig::DataCallback callback) -> Config&
+{
+  if (!m_encoder)
+  {
+    m_encoder = EncoderReceiverConfig::create();
+  }
+  m_encoder->setReceiverPort(receiverPort).setOnNewDataCallback(std::move(callback));
+  return *this;
+}
+
+auto Config::scanData() const -> std::optional<ScanDataReceiverConfig> const&
+{
+  return m_scanData;
+}
+
+auto Config::imu() const -> std::optional<ImuReceiverConfig> const&
+{
+  return m_imu;
+}
+
+auto Config::encoder() const -> std::optional<EncoderReceiverConfig> const&
+{
+  return m_encoder;
+}
+
+Driver::Driver(Config const& config)
+{
+  if (config.scanData())
+  {
+    m_scanDataReceiver.emplace(*config.scanData());
+  }
+  if (config.imu())
+  {
+    m_imuReceiver.emplace(*config.imu());
+  }
+  if (config.encoder())
+  {
+    m_encoderReceiver.emplace(*config.encoder());
+  }
+}
 
 Driver::~Driver()
 {
@@ -31,48 +121,34 @@ Driver::~Driver()
 
 void Driver::run()
 {
-  m_encoderReceiver.start();
-  m_imuReceiver.start();
-  m_scanDataReceiver.start();
+  if (m_scanDataReceiver)
+  {
+    m_scanDataReceiver->start();
+  }
+  if (m_imuReceiver)
+  {
+    m_imuReceiver->start();
+  }
+  if (m_encoderReceiver)
+  {
+    m_encoderReceiver->start();
+  }
 }
 
 void Driver::stop()
 {
-  m_encoderReceiver.stop();
-  m_imuReceiver.stop();
-  m_scanDataReceiver.stop();
-}
-
-// --------------------------------------------------------------
-// EncoderReceiver
-// --------------------------------------------------------------
-auto Driver::EncoderReceiver::setup(
-  std::uint16_t receiverPort,
-  std::chrono::milliseconds firstDataTimeout,
-  std::chrono::milliseconds newDataTimeout,
-  std::size_t receiveBufferSize
-) -> EncoderReceiver&
-{
-  BaseT::setup(
-    [this](compact::encoder::EncoderData const& data) -> void {
-      if (m_callback.has_value())
-      {
-        (*m_callback)(data);
-      }
-    },
-    receiverPort,
-    firstDataTimeout,
-    newDataTimeout,
-    receiveBufferSize
-  );
-
-  return *this;
-}
-
-auto Driver::EncoderReceiver::setOnNewDataCallback(DataCallback callback) -> EncoderReceiver&
-{
-  m_callback = std::move(callback);
-  return *this;
+  if (m_scanDataReceiver)
+  {
+    m_scanDataReceiver->stop();
+  }
+  if (m_imuReceiver)
+  {
+    m_imuReceiver->stop();
+  }
+  if (m_encoderReceiver)
+  {
+    m_encoderReceiver->stop();
+  }
 }
 
 } // namespace sick::picoScan100

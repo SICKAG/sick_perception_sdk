@@ -821,9 +821,15 @@ The library is designed in layers so applications can choose the level of abstra
       <td valign="top"><em>Convenience Packet Handling</em></td>
       <td valign="top">This layer provides classes that combine low-level data exchange and parsing to provide convenient access to data streams via UDP Unicast, UDP Multicast, or TCP. These convenience classes contain their own threads. Interaction with the application is done via callbacks.</td>
       <td valign="top">
-        <a href="src/drivers/include/sick_perception_sdk/drivers/Receiver/TcpStreamReceiver.hpp">TcpStreamReceiver</a>
+        <a href="src/drivers/include/sick_perception_sdk/drivers/Receiver/ReceiverLoop.hpp">ReceiverLoop</a>
         <br/>
-        <a href="src/drivers/include/sick_perception_sdk/drivers/Receiver/UdpStreamReceiver.hpp">UdpStreamReceiver</a>
+        <a href="src/drivers/include/sick_perception_sdk/drivers/Receiver/DatagramDecoder.hpp">DatagramDecoder</a>
+        <br/>
+        <a href="src/drivers/include/sick_perception_sdk/drivers/Receiver/TelegramStreamDecoder.hpp">TelegramStreamDecoder</a>
+        <br/>
+        <a href="src/drivers/include/sick_perception_sdk/drivers/Receiver/UdpScanDataReceiver.hpp">UdpScanDataReceiver</a>
+        <br/>
+        <a href="src/drivers/include/sick_perception_sdk/drivers/Receiver/UdpImuReceiver.hpp">UdpImuReceiver</a>
       </td>
     </tr>
     <tr>
@@ -883,7 +889,7 @@ The sick_perception_sdk provides data structures for working with measurement da
 
 [`sick::compact::scan_data::ScanData`](src/compact_format/include/sick_perception_sdk/compact_format/telegram_type_1_scan_data/ScanData.hpp) is the low-level data structure for **picoScan100, multiScan100, and LRS4000** that closely mirrors the **Compact format** (telegram type 1) streamed by the sensor. It uses a **flat structure-of-arrays layout** per module.
 
-`ScanData` is produced by the `ScanDataParser` and is the input for the `scan_data::PointCloudConverter`. It is delivered to the application via callbacks when using the receiver classes (e.g., `TcpStreamReceiver`, `UdpStreamReceiver`) or the drivers.
+`ScanData` is produced by the `ScanDataParser` and is the input for the `scan_data::PointCloudConverter`. It is delivered to the application via callbacks when using the receiver classes (e.g., `UdpScanDataReceiver`) or the drivers.
 
 > [!NOTE]
 >
@@ -893,7 +899,7 @@ The sick_perception_sdk provides data structures for working with measurement da
 
 [`sick::compact::multiscan200::MultiScan200Data`](src/compact_format/include/sick_perception_sdk/compact_format/telegram_type_6_multiScan200/MultiScan200Data.hpp) is the low-level data structure for the **multiScan200** that closely mirrors the **Compact format** (telegram type 6) streamed by the sensor. It uses a flat **structure-of-arrays** layout.
 
-`MultiScan200Data` is produced by the `MultiScan200Parser` and is the input for the `multiscan200::PointCloudConverter`. It is delivered to the application via callbacks when using the receiver classes `TcpStreamReceiver` or the drivers.
+`MultiScan200Data` is produced by the `MultiScan200Parser` and is the input for the `multiscan200::PointCloudConverter`. It is delivered to the application via callbacks when using the `multiScan200::Driver::ScanDataReceiver` or the drivers.
 
 #### PointCloud
 

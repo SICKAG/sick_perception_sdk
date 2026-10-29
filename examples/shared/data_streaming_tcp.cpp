@@ -12,13 +12,17 @@ SPDX-License-Identifier: MIT
 #if defined(USE_LRS4000)
 #  include <sick_perception_sdk/drivers/LRS4000/LRS4000Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/LRS4000/LRS4000Configurator.hpp>
-using ConfiguratorT = sick::LRS4000::v1_10_0::Configurator;
-using DriverT       = sick::LRS4000::Driver;
+using ConfiguratorT   = sick::LRS4000::v1_10_0::Configurator;
+using DriverT         = sick::LRS4000::Driver;
+using ConfigT         = sick::LRS4000::Config;
+using ScanDataConfigT = sick::LRS4000::ScanDataReceiverConfig;
 #else // Defaults to multiScan200
 #  include <sick_perception_sdk/drivers/multiScan200/MultiScan200Driver.hpp>
 #  include <sick_perception_sdk/sensor_configuration/multiScan200/MultiScan200Configurator.hpp>
-using ConfiguratorT = sick::multiScan200::v1_1_0::Configurator;
-using DriverT       = sick::multiScan200::Driver;
+using ConfiguratorT   = sick::multiScan200::v1_1_0::Configurator;
+using DriverT         = sick::multiScan200::Driver;
+using ConfigT         = sick::multiScan200::Config;
+using ScanDataConfigT = sick::multiScan200::ScanDataReceiverConfig;
 #endif
 
 #include <chrono>
@@ -86,21 +90,27 @@ int main(int argc, char* argv[])
   config.filters.azimuth   = sick::Interval {-150_deg, 150_deg, false};
   config.filters.elevation = sick::Interval {-45_deg, 45_deg, false};
 
-  DriverT driver(sensorAddress.address, sick::examples::printExceptionMessage);
-  driver
-    .scanDataReceiver() //
-    .setup()            //
-    .setOnNewFrameCallback(std::function<void(sick::point_cloud::UnorganizedPointCloud const&)> {onNewPointCloud}, config);
+  auto driverConfig =
+    ConfigT::create(sensorAddress.address) //
+      .configureScanDataReceiver(
+        ScanDataConfigT::create(ScanDataConfigT::kDefaultPort)
+          .setOnNewFrameCallback(std::function<void(sick::point_cloud::UnorganizedPointCloud const&)> {onNewPointCloud}, config)
+          .setOnError(sick::examples::printExceptionMessage)
+      );
 #if defined(USE_MULTISCAN200)
-  driver
-    .ambientLightReceiver() //
-    .setup()                //
-    .setOnNewDataCallback(onNewAmbientLightData);
-  driver
-    .imuReceiver() //
-    .setup()       //
-    .setOnNewDataCallback(onNewImuData);
+  driverConfig.configureAmbientLightReceiver(
+    sick::multiScan200::AmbientLightReceiverConfig::create(sick::multiScan200::AmbientLightReceiverConfig::kDefaultPort)
+      .setOnNewDataCallback(onNewAmbientLightData)
+      .setOnError(sick::examples::printExceptionMessage)
+  );
+  driverConfig.configureImuReceiver(
+    sick::multiScan200::ImuReceiverConfig::create(sick::multiScan200::ImuReceiverConfig::kDefaultPort)
+      .setOnNewDataCallback(onNewImuData)
+      .setOnError(sick::examples::printExceptionMessage)
+  );
 #endif
+
+  DriverT driver(driverConfig);
   driver.run();
 
   std::this_thread::sleep_for(10s);
