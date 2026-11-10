@@ -107,7 +107,7 @@ void AmbientLightReceiver::start()
   auto const& transport  = m_config.transport();
   std::string streamName = m_config.loggerName() + " " + m_sensorAddress.toString() + ":" + std::to_string(transport.port);
 
-  m_loop = std::make_unique<LoopT>(
+  auto loop = std::make_unique<LoopT>(
     compact::makeTcpSocket(m_sensorAddress, transport.port),
     transport.receiveBufferSize,
     compact::TelegramStreamDecoder<compact::ambient_light::Parser>(m_config.dataCallback(), streamName),
@@ -116,7 +116,8 @@ void AmbientLightReceiver::start()
     transport.newDataTimeout,
     std::move(streamName)
   );
-  m_loop->start();
+  loop->start();
+  m_loop = std::move(loop);
 }
 
 void AmbientLightReceiver::stop()

@@ -216,7 +216,7 @@ void UdpScanDataReceiver::start()
   }
 
   auto const& transport = m_config.transport();
-  m_loop                = std::make_unique<LoopT>(
+  auto loop             = std::make_unique<LoopT>(
     makeUdpSocket(transport.port, m_config.multicast()),
     transport.receiveBufferSize,
     DatagramDecoder<scan_data::Parser>(Dispatcher(m_config.callbacks(), m_config.onError(), m_config.loggerName())),
@@ -225,7 +225,8 @@ void UdpScanDataReceiver::start()
     transport.newDataTimeout,
     m_config.loggerName() + " on port " + std::to_string(transport.port)
   );
-  m_loop->start();
+  loop->start();
+  m_loop = std::move(loop);
 }
 
 void UdpScanDataReceiver::stop()
