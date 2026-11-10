@@ -115,7 +115,7 @@ void EncoderReceiver::start()
   }
 
   auto const& transport = m_config.transport();
-  m_loop                = std::make_unique<LoopT>(
+  auto loop             = std::make_unique<LoopT>(
     compact::makeUdpSocket(transport.port, m_config.multicast()),
     transport.receiveBufferSize,
     compact::DatagramDecoder<compact::encoder::Parser>(m_config.dataCallback()),
@@ -124,7 +124,8 @@ void EncoderReceiver::start()
     transport.newDataTimeout,
     m_config.loggerName() + " on port " + std::to_string(transport.port)
   );
-  m_loop->start();
+  loop->start();
+  m_loop = std::move(loop);
 }
 
 void EncoderReceiver::stop()

@@ -9,6 +9,7 @@ SPDX-License-Identifier: MIT
 #include <sick_perception_sdk/common/logging/logging.hpp>
 #include <sick_perception_sdk/common/socket/ReceiveError.hpp>
 #include <sick_perception_sdk/common/socket/Socket.hpp>
+#include <sick_perception_sdk/drivers/Exceptions/ConnectionClosed.hpp>
 #include <sick_perception_sdk/drivers/Exceptions/Timeout.hpp>
 
 #include <atomic>
@@ -29,6 +30,10 @@ namespace sick::compact {
 
 /**
  * @brief Receives bytes from a socket on a dedicated thread and feeds them to a decoder.
+ *
+ * Errors are reported through the error handler on the receive thread. After a timeout the loop keeps receiving, since
+ * the stream may resume. A connection closed by the peer (zero-byte read on a connection-oriented socket) is reported
+ * once as ConnectionClosed and ends the loop, since the socket cannot deliver data anymore; stop() and start() reconnect.
  */
 template <typename DecoderT>
 class ReceiverLoop final
@@ -155,6 +160,16 @@ private:
           m_decoder(ByteView {m_receiveBuffer.data(), numberOfBytesReceived});
         }
       }
+      catch (ConnectionClosed const& exception)
+      {
+        if (!m_runReceiveLoop)
+        {
+          break;
+        }
+        LOG_ERROR(m_streamName) << exception.what() << " Ending receive loop.";
+        m_onError(std::current_exception());
+        break;
+      }
       catch (std::exception const& exception)
       {
         if (!m_runReceiveLoop)
@@ -176,6 +191,11 @@ private:
       LOG_FAST_LOOP_INFO(m_streamName) << "Received " << numberOfBytesReceived << " bytes.";
       if (numberOfBytesReceived == 0)
       {
+        if (m_socket->isConnectionOriented())
+        {
+          // recv() returns 0 on a stream socket only when the peer has closed the connection; a timeout throws instead.
+          throw ConnectionClosed("Connection closed by peer.");
+        }
         onNoDataReceived();
         return 0;
       }

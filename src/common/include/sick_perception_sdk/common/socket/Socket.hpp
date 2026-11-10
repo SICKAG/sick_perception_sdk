@@ -129,6 +129,13 @@ public:
   virtual void connect()
   { }
 
+  //! \brief Whether receive() returning 0 bytes means that the peer closed the connection.
+  //! True for stream sockets (TCP); false for datagram sockets, where an empty datagram is valid.
+  [[nodiscard]] virtual auto isConnectionOriented() const -> bool
+  {
+    return false;
+  }
+
   void closeConnection(void)
   {
     if (m_socket == INVALID_SOCKET)
