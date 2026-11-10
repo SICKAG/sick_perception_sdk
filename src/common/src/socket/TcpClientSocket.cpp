@@ -82,6 +82,11 @@ void TcpClientSocket::connect()
   }
 }
 
+auto TcpClientSocket::isConnectionOriented() const -> bool
+{
+  return true;
+}
+
 } // namespace sick
 
 // NOLINTEND(misc-include-cleaner)

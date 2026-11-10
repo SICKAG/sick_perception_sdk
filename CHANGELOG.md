@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multicast datagrams dropped because the multicast group was joined only after the receive loop had started.
 - Restarting a multicast UDP receiver did not rejoin the multicast group.
 - Data race between registering callbacks and the receive thread reading them.
+- Receivers reported `isRunning()` as true after `start()` failed to connect, so the next `start()` was ignored.
+- TCP receivers spun at full CPU load after the sensor closed the connection and raised a timeout error on every iteration. The receive loop now reports `sick::ConnectionClosed` once and ends; `stop()` and `start()` reconnect.
 
 ## [2.0.0]
 

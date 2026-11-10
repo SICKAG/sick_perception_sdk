@@ -32,6 +32,8 @@ public:
 
   void connect() override;
 
+  [[nodiscard]] auto isConnectionOriented() const -> bool override;
+
 private:
   IpV4Address m_serverAddress;
   std::uint16_t m_port;
